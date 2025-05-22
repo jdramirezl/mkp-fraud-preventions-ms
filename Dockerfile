@@ -18,12 +18,19 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Copy package files and install production dependencies
 COPY package*.json ./
 RUN npm install --production
 
+# Copy compiled files and necessary source files for TypeORM
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/migrations ./src/migrations
 COPY --from=builder /app/src/entity ./src/entity
+COPY --from=builder /app/src/datasource ./src/datasource
+COPY --from=builder /app/tsconfig.json ./
+
+# Add TypeScript dependencies for migrations
+RUN npm install -D typescript ts-node @types/node
 
 # Add a startup script
 COPY start.sh .
