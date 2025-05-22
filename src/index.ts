@@ -1,37 +1,30 @@
 import express from 'express';
 import cors from 'cors';
-import morgan from 'morgan';
-import 'dotenv/config';
-import { AppDataSource } from "./datasource/datasource";
 import { fraudPreventionRouter } from './routes/fraudPreventionRouter';
+import { AppDataSource } from './datasource/data-source';
 
+const app = express();
+const port = process.env.PORT || 3000;
 
-AppDataSource.connect()
-  .then(() => {
-    console.log('Database connection established');
-  })
-  .catch((error: Error) => {
-    console.error('Database connection failed', error);
-  });
-
-const app = express();  
-
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(morgan('dev'));
+app.use(express.json());
 
-// Routes
-app.use('/api/fraud-preventions', fraudPreventionRouter);
-
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.json({ status: 'OK' });
 });
 
-const PORT = process.env.PORT || 3000;
+// Initialize database connection
+AppDataSource.initialize()
+  .then(() => {
+    console.log("Database connection initialized");
+  })
+  .catch((error) => {
+    console.error("Error initializing database connection:", error);
+  });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.use('/api/fraud-preventions', fraudPreventionRouter);
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
