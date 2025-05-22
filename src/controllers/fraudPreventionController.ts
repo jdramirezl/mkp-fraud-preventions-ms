@@ -5,8 +5,8 @@ import { FraudPreventionEntity } from "../entity/fraudPreventionEntity";
 export class FraudPreventionController {
   private fraudPreventionService: FraudPreventionService;
 
-  constructor() {
-    this.fraudPreventionService = new FraudPreventionService();
+  constructor(fraudPreventionService?: FraudPreventionService) {
+    this.fraudPreventionService = fraudPreventionService || new FraudPreventionService();
   }
 
   getAll = async (req: Request, res: Response): Promise<Response> => {

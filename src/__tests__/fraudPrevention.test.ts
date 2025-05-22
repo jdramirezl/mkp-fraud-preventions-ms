@@ -6,34 +6,43 @@ import { AppDataSource } from "../datasource/datasource";
 import { Repository } from "typeorm";
 import { FraudPreventionController } from "../controllers/fraudPreventionController";
 import { Request, Response } from "express";
+import { FraudPreventionService } from '../services/fraudPreventionService';
+
+// Create a mock service class
+class MockFraudPreventionService {
+  create = jest.fn();
+  findById = jest.fn();
+  findAll = jest.fn();
+  update = jest.fn();
+  delete = jest.fn();
+  blockTransaction = jest.fn();
+  assessRisk = jest.fn();
+  findByTransactionId = jest.fn();
+  findByUserId = jest.fn();
+}
 
 describe("Fraud Prevention Tests", () => {
   let fraudPreventionController: FraudPreventionController;
-  let mockRepository: Partial<Repository<FraudPreventionEntity>>;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
+  let mockService: MockFraudPreventionService;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    };
-
     // Mock the response object
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
 
-    // Mock AppDataSource.getRepository
-    jest
-      .spyOn(AppDataSource, "getRepository")
-      .mockReturnValue(mockRepository as Repository<FraudPreventionEntity>);
+    // Create a new instance of mock service
+    mockService = new MockFraudPreventionService();
+    
+    // Create controller with mocked service
+    fraudPreventionController = new FraudPreventionController(mockService as unknown as FraudPreventionService);
+  });
 
-    fraudPreventionController = new FraudPreventionController();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe("Create Fraud Prevention", () => {
@@ -50,20 +59,60 @@ describe("Fraud Prevention Tests", () => {
         body: mockFraudPrevention,
       };
 
-      (mockRepository.save as jest.Mock).mockResolvedValue(mockFraudPrevention);
+      mockService.create.mockResolvedValue(mockFraudPrevention);
+      mockService.assessRisk.mockResolvedValue(RiskLevel.LOW);
 
-      await fraudPreventionController.create(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await fraudPreventionController.create(mockRequest as Request, mockResponse as Response);
 
-      expect(mockRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining(mockFraudPrevention)
-      );
+      expect(mockService.create).toHaveBeenCalledWith(expect.objectContaining(mockFraudPrevention));
       expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining(mockFraudPrevention)
-      );
+      expect(mockResponse.json).toHaveBeenCalledWith(mockFraudPrevention);
+    });
+
+    it("should handle errors when creating fraud prevention", async () => {
+      const mockError = new Error("Database error");
+      mockRequest = {
+        body: {},
+      };
+
+      mockService.create.mockRejectedValue(mockError);
+
+      await fraudPreventionController.create(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: "Error al crear la prevención de fraude",
+      });
+    });
+
+    it("should assess risk when riskLevel is not provided", async () => {
+      const mockData = {
+        transactionId: "123",
+        userIp: "192.168.1.1",
+        userId: "user123",
+      };
+
+      const mockFraudPrevention = {
+        ...mockData,
+        riskLevel: RiskLevel.HIGH,
+      };
+
+      mockRequest = {
+        body: mockData,
+      };
+
+      mockService.assessRisk.mockResolvedValue(RiskLevel.HIGH);
+      mockService.create.mockResolvedValue(mockFraudPrevention);
+
+      await fraudPreventionController.create(mockRequest as Request, mockResponse as Response);
+
+      expect(mockService.assessRisk).toHaveBeenCalledWith(mockData);
+      expect(mockService.create).toHaveBeenCalledWith(expect.objectContaining({
+        ...mockData,
+        riskLevel: RiskLevel.HIGH,
+      }));
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockFraudPrevention);
     });
   });
 
@@ -79,18 +128,11 @@ describe("Fraud Prevention Tests", () => {
         params: { id: "123" },
       };
 
-      (mockRepository.findOne as jest.Mock).mockResolvedValue(
-        mockFraudPrevention
-      );
+      mockService.findById.mockResolvedValue(mockFraudPrevention);
 
-      await fraudPreventionController.getById(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await fraudPreventionController.getById(mockRequest as Request, mockResponse as Response);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: "123" },
-      });
+      expect(mockService.findById).toHaveBeenCalledWith("123");
       expect(mockResponse.json).toHaveBeenCalledWith(mockFraudPrevention);
     });
 
@@ -99,14 +141,14 @@ describe("Fraud Prevention Tests", () => {
         params: { id: "nonexistent" },
       };
 
-      (mockRepository.findOne as jest.Mock).mockResolvedValue(null);
+      mockService.findById.mockResolvedValue(null);
 
-      await fraudPreventionController.getById(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await fraudPreventionController.getById(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: "Prevención de fraude no encontrada",
+      });
     });
   });
 
@@ -118,65 +160,53 @@ describe("Fraud Prevention Tests", () => {
         isBlocked: false,
       };
 
+      const updatedMockFraudPrevention = {
+        ...mockFraudPrevention,
+        isBlocked: true,
+        blockReason: "Suspicious activity",
+      };
+
       mockRequest = {
         params: { id: "123" },
         body: { reason: "Suspicious activity" },
       };
 
-      (mockRepository.findOne as jest.Mock).mockResolvedValue(
-        mockFraudPrevention
-      );
-      (mockRepository.save as jest.Mock).mockResolvedValue({
-        ...mockFraudPrevention,
-        isBlocked: true,
-        blockReason: "Suspicious activity",
-      });
+      mockService.blockTransaction.mockResolvedValue(updatedMockFraudPrevention);
 
-      await fraudPreventionController.blockTransaction(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await fraudPreventionController.blockTransaction(mockRequest as Request, mockResponse as Response);
 
-      expect(mockRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          isBlocked: true,
-          blockReason: "Suspicious activity",
-        })
-      );
-      expect(mockResponse.json).toHaveBeenCalled();
+      expect(mockService.blockTransaction).toHaveBeenCalledWith("123", "Suspicious activity");
+      expect(mockResponse.json).toHaveBeenCalledWith(updatedMockFraudPrevention);
     });
-  });
 
-  describe("Risk Level Assessment", () => {
-    it("should update risk level based on attempt count", async () => {
-      const mockFraudPrevention = {
-        id: "123",
-        transactionId: "123",
-        attemptCount: 5,
-        riskLevel: RiskLevel.LOW,
-      };
-
+    it("should return 404 when transaction not found", async () => {
       mockRequest = {
-        body: mockFraudPrevention,
+        params: { id: "nonexistent" },
+        body: { reason: "Suspicious activity" },
       };
 
-      (mockRepository.save as jest.Mock).mockImplementation((entity) => {
-        if (entity.attemptCount >= 5) {
-          entity.riskLevel = RiskLevel.HIGH;
-        }
-        return Promise.resolve(entity);
+      mockService.blockTransaction.mockResolvedValue(null);
+
+      await fraudPreventionController.blockTransaction(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(404);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: "Prevención de fraude no encontrada",
       });
+    });
 
-      await fraudPreventionController.create(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+    it("should return 400 when reason is missing", async () => {
+      mockRequest = {
+        params: { id: "123" },
+        body: {},
+      };
 
-      expect(mockRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          riskLevel: RiskLevel.HIGH,
-        })
-      );
+      await fraudPreventionController.blockTransaction(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: "Se requiere una razón para bloquear la transacción",
+      });
     });
   });
 });
