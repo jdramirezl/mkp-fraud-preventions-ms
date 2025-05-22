@@ -12,7 +12,8 @@
     "experimentalDecorators": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false
   },
   "include": [
     "src/**/*.ts"
