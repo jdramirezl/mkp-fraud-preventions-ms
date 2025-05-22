@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "Fraud Prevention API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/health"
+        }
+      }
+    },
+    {
+      "name": "Create Fraud Prevention Check",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3000/api/fraud-preventions"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"transactionId\": \"tx-123456789\",\n  \"userIp\": \"192.168.1.1\",\n  \"deviceId\": \"device-xyz-123\",\n  \"userId\": \"user-abc-456\",\n  \"additionalData\": {\n    \"amount\": 1000,\n    \"currency\": \"USD\",\n    \"paymentMethod\": \"credit_card\"\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "Get All Fraud Preventions",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/api/fraud-preventions"
+        }
+      }
+    },
+    {
+      "name": "Get Fraud Prevention by ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/api/fraud-preventions/:id",
+          "variable": [
+            {
+              "key": "id",
+              "value": "REPLACE_WITH_ACTUAL_ID"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Block Transaction",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3000/api/fraud-preventions/:id/block",
+          "variable": [
+            {
+              "key": "id",
+              "value": "REPLACE_WITH_ACTUAL_ID"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Multiple failed attempts from different locations\"\n}"
+        }
+      }
+    }
+  ]
+} 
