@@ -1,111 +1,127 @@
 # Fraud Prevention Microservice
 
-Un microservicio robusto desarrollado en TypeScript para la detección y prevención de fraudes en transacciones digitales.
+A robust TypeScript microservice for fraud detection and prevention in digital transactions.
 
-## 📋 Características
+## 📋 Features
 
-- **Evaluación de riesgo en tiempo real** - Análisis automático de transacciones para determinar niveles de riesgo
-- **Seguimiento de usuarios y dispositivos** - Monitoreo de patrones de comportamiento sospechosos
-- **API RESTful completa** - Endpoints para todas las operaciones CRUD
-- **Bloqueo de transacciones** - Capacidad para bloquear transacciones sospechosas con registro de motivos
-- **Persistencia en MySQL** - Almacenamiento seguro y eficiente de los datos
-- **Containerizado con Docker** - Facilidad de despliegue en cualquier entorno
+- **Real-time Risk Assessment** - Automatic transaction analysis to determine risk levels
+- **User and Device Tracking** - Monitoring of suspicious behavior patterns
+- **Complete RESTful API** - Endpoints for all CRUD operations
+- **Transaction Blocking** - Ability to block suspicious transactions with reason logging
+- **MySQL Persistence** - Secure and efficient data storage
+- **Docker Containerization** - Easy deployment in any environment
 
-## 🚀 Instalación
+## 🛠️ Architecture
 
-### Prerrequisitos
-
-- Node.js (v18 o superior)
-- npm o yarn
-- Docker y Docker Compose (opcional, para entorno containerizado)
-
-### Configuración Local
-
-1. **Clonar el repositorio**
-
-```bash
-git clone <url-del-repositorio>
-cd fraud-preventions-ms
-```
-
-2. **Instalar dependencias**
-
-```bash
-npm install
-```
-
-3. **Configurar variables de entorno**
-
-Crea un archivo `.env` en la raíz del proyecto basándote en el ejemplo:
-
-```
-# Database configuration
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=root
-DB_PASSWORD=password
-DB_DATABASE=fraud_prevention
-
-# Server configuration
-PORT=3000
-NODE_ENV=development
-```
-
-4. **Iniciar el servidor en modo desarrollo**
-
-```bash
-npm run dev
-```
-
-### Usando Docker
-
-1. **Construir y levantar los contenedores**
-
-```bash
-docker-compose up -d
-```
-
-Este comando iniciará tanto el microservicio como la base de datos MySQL.
-
-## 🛠️ Arquitectura
-
-El microservicio sigue una arquitectura en capas:
+The microservice follows a layered architecture:
 
 ```
 fraud-preventions-ms/
 ├── src/
-│   ├── controllers/     # Manejo de peticiones HTTP
-│   ├── datasource/      # Configuración de conexión a base de datos
-│   ├── entity/          # Definición de entidades y modelos
-│   ├── routes/          # Definición de rutas de la API
-│   ├── services/        # Lógica de negocio
-│   └── index.ts         # Punto de entrada de la aplicación
+│   ├── controllers/     # HTTP request handling
+│   ├── datasource/      # Database connection configuration
+│   ├── entity/          # Entity and model definitions
+│   ├── routes/          # API route definitions
+│   ├── services/        # Business logic
+│   └── index.ts         # Application entry point
 ```
+
+## 🚀 Deployment Setup
+
+### Prerequisites
+
+1. **Google Cloud Platform Account**
+   - Create a new project or use an existing one
+   - Enable the required APIs (will be handled by Terraform)
+   - Create a service account with the following roles:
+     - Cloud Run Admin
+     - Cloud SQL Admin
+     - Storage Admin
+     - Service Account User
+     - Artifact Registry Administrator
+
+2. **GitHub Repository Setup**
+   Add the following secrets to your GitHub repository:
+   - `GCP_PROJECT_ID`: Your GCP project ID
+   - `GCP_SA_KEY`: The service account key JSON
+   - `GCP_TF_STATE_BUCKET`: The GCS bucket name for Terraform state
+   - `DB_PASSWORD`: The password for the database user
+
+### Infrastructure
+
+The infrastructure is managed using Terraform and includes:
+- Cloud Run service for the application
+- Cloud SQL (MySQL) for the database
+- Artifact Registry for Docker images
+- Required networking and IAM configurations
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`ci-cd.yml`) handles:
+1. Running tests
+2. Building the Docker image
+3. Pushing to Artifact Registry
+4. Applying Terraform changes
+5. Deploying to Cloud Run
+
+## 💻 Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone git@github.com:jdramirezl/mkp-fraud-preventions-ms.git
+   cd mkp-fraud-preventions-ms
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   Create a `.env` file:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USERNAME=root
+   DB_PASSWORD=your_password
+   DB_DATABASE=fraud_prevention_db
+   NODE_ENV=development
+   ```
+
+4. **Run locally**
+   ```bash
+   npm run dev
+   ```
+
+5. **Run with Docker**
+   ```bash
+   docker-compose up
+   ```
 
 ## 📡 API Endpoints
 
-### Prevención de Fraude
+### Fraud Prevention
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/fraud-preventions` | Obtener todas las prevenciones de fraude (paginado) |
-| GET | `/api/fraud-preventions/:id` | Obtener una prevención de fraude por ID |
-| GET | `/api/fraud-preventions/transaction/:transactionId` | Obtener prevención por ID de transacción |
-| GET | `/api/fraud-preventions/user/:userId` | Obtener todas las prevenciones de un usuario |
-| POST | `/api/fraud-preventions` | Crear nuevo registro de prevención de fraude |
-| PUT | `/api/fraud-preventions/:id` | Actualizar un registro existente |
-| DELETE | `/api/fraud-preventions/:id` | Eliminar un registro |
-| POST | `/api/fraud-preventions/:id/block` | Bloquear una transacción con razón específica |
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/fraud-preventions` | Get all fraud preventions (paginated) |
+| GET | `/api/fraud-preventions/:id` | Get fraud prevention by ID |
+| GET | `/api/fraud-preventions/transaction/:transactionId` | Get prevention by transaction ID |
+| GET | `/api/fraud-preventions/user/:userId` | Get all preventions for a user |
+| POST | `/api/fraud-preventions` | Create new fraud prevention record |
+| PUT | `/api/fraud-preventions/:id` | Update existing record |
+| DELETE | `/api/fraud-preventions/:id` | Delete record |
+| POST | `/api/fraud-preventions/:id/block` | Block a transaction with specific reason |
 
-### Salud del Servicio
+### Service Health
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/health` | Verificar el estado del servicio |
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/health` | Check service health status |
 
-## 📥 Ejemplos de Uso
+## 📥 Usage Examples
 
-### Crear una nueva verificación de fraude
+### Create a New Fraud Check
 
 ```bash
 curl -X POST http://localhost:3000/api/fraud-preventions \
@@ -123,104 +139,106 @@ curl -X POST http://localhost:3000/api/fraud-preventions \
   }'
 ```
 
-### Bloquear una transacción sospechosa
+### Block a Suspicious Transaction
 
 ```bash
-curl -X POST http://localhost:3000/api/fraud-preventions/uuid-del-registro/block \
+curl -X POST http://localhost:3000/api/fraud-preventions/uuid-of-record/block \
   -H "Content-Type: application/json" \
   -d '{
-    "reason": "Múltiples intentos fallidos desde diferentes ubicaciones"
+    "reason": "Multiple failed attempts from different locations"
   }'
 ```
 
-## 📊 Modelo de Datos
+## 📊 Data Model
 
-La entidad principal `FraudPrevention` contiene:
+The main `FraudPrevention` entity contains:
 
-- `id`: Identificador único (UUID)
-- `transactionId`: ID de la transacción relacionada
-- `userIp`: Dirección IP del usuario
-- `deviceId`: Identificador del dispositivo usado
-- `userId`: Identificador del usuario
-- `riskLevel`: Nivel de riesgo (LOW, MEDIUM, HIGH, CRITICAL)
-- `additionalData`: Datos adicionales de la transacción (JSON)
-- `isBlocked`: Indicador si la transacción está bloqueada
-- `blockReason`: Razón del bloqueo
-- `attemptCount`: Contador de intentos
-- `createdAt`: Fecha de creación
-- `updatedAt`: Fecha de actualización
+- `id`: Unique identifier (UUID)
+- `transactionId`: Related transaction ID
+- `userIp`: User's IP address
+- `deviceId`: Device identifier
+- `userId`: User identifier
+- `riskLevel`: Risk level (LOW, MEDIUM, HIGH, CRITICAL)
+- `additionalData`: Additional transaction data (JSON)
+- `isBlocked`: Transaction block indicator
+- `blockReason`: Block reason
+- `attemptCount`: Attempt counter
+- `createdAt`: Creation timestamp
+- `updatedAt`: Last update timestamp
 
-## 🧪 Tests
+## 🧪 Development Cycle
 
-Para ejecutar las pruebas:
+1. **Run Tests**
+   ```bash
+   npm run test
+   ```
 
-```bash
-npm run test
-```
+2. **Build TypeScript**
+   ```bash
+   npm run build
+   ```
 
-## 🔄 Ciclo de Desarrollo
+3. **Lint Code**
+   ```bash
+   npm run lint
+   ```
 
-1. **Compilar TypeScript**
+4. **Run Production Server**
+   ```bash
+   npm start
+   ```
 
-```bash
-npm run build
-```
+## 🚢 Production Deployment
 
-2. **Lint del código**
+1. Configure production environment variables
+2. Build Docker image:
+   ```bash
+   docker build -t fraud-preventions-ms:latest .
+   ```
 
-```bash
-npm run lint
-```
+3. Run with appropriate configuration:
+   ```bash
+   docker run -p 3000:8080 --env-file .env.production fraud-preventions-ms:latest
+   ```
 
-3. **Ejecutar servidor compilado**
+## 📚 API Documentation
 
-```bash
-npm start
-```
+The API documentation is available through Swagger UI when running in development mode.
 
-## 🚢 Despliegue
+## 🔒 Security Considerations
 
-### En Producción
+1. **Database Access**
+   - Cloud SQL instance is protected by authorized networks
+   - Credentials are managed through GitHub Secrets
+   - SSL/TLS encryption for database connections
 
-1. Configurar variables de entorno para producción
-2. Construir la imagen Docker:
+2. **API Security**
+   - Cloud Run service can be configured with authentication
+   - Environment variables are securely managed
+   - Service account with minimal required permissions
 
-```bash
-docker build -t fraud-preventions-ms:latest .
-```
+## 📊 Monitoring and Logging
 
-3. Ejecutar con la configuración adecuada:
+- Cloud Run provides built-in monitoring and logging
+- Cloud SQL monitoring is available through Cloud Monitoring
+- Custom metrics can be added using OpenTelemetry
 
-```bash
-docker run -p 3000:3000 --env-file .env.production fraud-preventions-ms:latest
-```
+## 🤝 Contributing
 
-## 📚 Documentación Adicional
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-Para una documentación interactiva de la API, considera implementar Swagger:
+## 📄 License
 
-```bash
-# TODO: Agregar instrucciones para configurar Swagger
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🤝 Contribuciones
+## 📞 Contact
 
-Las contribuciones son bienvenidas. Por favor, sigue estos pasos:
-
-1. Fork del repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/amazing-feature`)
-3. Commit de tus cambios (`git commit -m 'Add some amazing feature'`)
-4. Push a la rama (`git push origin feature/amazing-feature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está licenciado bajo [LICENCIA] - ver el archivo LICENSE.md para más detalles.
-
-## 📞 Contacto
-
-[Nombre del equipo/desarrollador] - [email]
+For any questions or suggestions, please open an issue in the repository.
 
 ---
 
-Desarrollado con ❤️ por [Tu nombre/equipo]
+Made with ❤️ by the Fraud Prevention Team

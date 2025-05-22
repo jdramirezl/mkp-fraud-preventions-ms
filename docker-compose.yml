@@ -4,16 +4,15 @@ services:
   app-fraud-preventions:
     build: .
     ports:
-      - "5000:5000"
+      - "3000:3000"
     volumes:
       - .:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - PORT=3000
     depends_on:
       - db-fraud-preventions
-    networks:
-      - microservices-network
 
   db-fraud-preventions:
     image: mysql:8.3
@@ -27,12 +26,6 @@ services:
     volumes:
       - .dbfraudprevention:/var/lib/mysql-fraud-prevention:rw
     user: mysql
-    networks:
-      - microservices-network
-
-networks:
-  microservices-network:
-    external: true
 
 volumes:
   fraudprevention:
