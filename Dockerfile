@@ -36,6 +36,10 @@ RUN npm install -D typescript ts-node @types/node
 COPY start.sh .
 RUN chmod +x start.sh
 
-EXPOSE 3000
+# Set environment variables
+ENV PORT=8080
+ENV NODE_ENV=production
+
+EXPOSE 8080
 
 CMD ["./start.sh"]

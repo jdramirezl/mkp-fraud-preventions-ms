@@ -15,4 +15,5 @@ fi
 
 # Start the application
 echo "Starting the application..."
+echo "Using PORT: $PORT"
 NODE_ENV=production node dist/index.js 
