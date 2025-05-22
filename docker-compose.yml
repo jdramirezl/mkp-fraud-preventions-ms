@@ -1,33 +1,32 @@
 version: '3.8'
 
 services:
-  app:
+  app-fraud-preventions:
     build: .
     ports:
-      - "3000:8080"
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USERNAME=root
-      - DB_PASSWORD=rootpassword
-      - DB_DATABASE=fraud_prevention_db
-    depends_on:
-      - db
+      - "3000:3000"
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run dev
-
-  db:
-    image: mysql:8.3
-    ports:
-      - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=fraud_prevention_db
+      - NODE_ENV=development
+      - PORT=3000
+    depends_on:
+      - db-fraud-preventions
+
+  db-fraud-preventions:
+    image: mysql:8.3
+    restart: always
+    ports:
+      - "3305:3305"
+    environment:
+      MYSQL_DATABASE: fraud_prevention_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_TCP_PORT: 3305
     volumes:
-      - mysql_data:/var/lib/mysql
+      - .dbfraudprevention:/var/lib/mysql-fraud-prevention:rw
+    user: mysql
 
 volumes:
-  mysql_data:
+  fraudprevention:
+    name: dbfraudprevention
