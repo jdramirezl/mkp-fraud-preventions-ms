@@ -1,0 +1,187 @@
+{
+	"info": {
+		"_postman_id": "ca7c5ed8-d76f-4cfd-b128-f5cf2395a349",
+		"name": "Fraud Prevention API Copy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27430315"
+	},
+	"item": [
+		{
+			"name": "1. System",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Transaction Management",
+			"item": [
+				{
+					"name": "Create Fraud Prevention Check",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"tx-123456789\",\n    \"userIp\": \"192.168.1.1\",\n    \"deviceId\": \"device-xyz-123\",\n    \"userId\": \"user-abc-456\",\n    \"additionalData\": {\n        \"amount\": 1000,\n        \"currency\": \"USD\",\n        \"paymentMethod\": \"credit_card\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/fraud-preventions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"fraud-preventions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Fraud Preventions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/fraud-preventions?page=1&limit=10&sortBy=createdAt&order=desc",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"fraud-preventions"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt"
+								},
+								{
+									"key": "order",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Fraud Prevention by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/fraud-preventions/{{fraud_prevention_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"fraud-preventions",
+								"{{fraud_prevention_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Fraud Prevention",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"riskLevel\": \"HIGH\",\n    \"additionalData\": {\n        \"amount\": 2000,\n        \"currency\": \"USD\",\n        \"updatedReason\": \"Amount increase detected\"\n    }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/fraud-preventions/{{fraud_prevention_id}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"fraud-preventions",
+								"{{fraud_prevention_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "fraud_prevention_id",
+			"value": ""
+		},
+		{
+			"key": "user_id",
+			"value": "user-abc-456"
+		},
+		{
+			"key": "device_id",
+			"value": "device-xyz-123"
+		},
+		{
+			"key": "ip_address",
+			"value": "192.168.1.1"
+		},
+		{
+			"key": "start_date",
+			"value": "2024-03-01T00:00:00Z"
+		},
+		{
+			"key": "end_date",
+			"value": "2024-03-22T23:59:59Z"
+		},
+		{
+			"key": "fraud_id",
+			"value": "{{fraud_prevention_id}}"
+		}
+	]
+}
