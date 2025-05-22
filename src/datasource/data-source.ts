@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { FraudPreventionEntity } from "../entity/FraudPreventionEntity";
+import { FraudPreventionEntity } from "../entity/fraudPreventionEntity";
 
 export const AppDataSource = new DataSource({
     type: "mysql",

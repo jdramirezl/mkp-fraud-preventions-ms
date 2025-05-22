@@ -1,5 +1,5 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
-import { RiskLevel } from "../entity/FraudPreventionEntity";
+import { RiskLevel } from "../entity/fraudPreventionEntity";
 
 export class CreateFraudPreventionTable1710965644123 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
