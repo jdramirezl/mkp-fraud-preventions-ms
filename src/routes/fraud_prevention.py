@@ -86,3 +86,4 @@ def block_transaction(
     if not fraud:
         raise HTTPException(status_code=404, detail="Fraud prevention record not found")
     return fraud
+ 

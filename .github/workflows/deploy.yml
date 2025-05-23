@@ -17,6 +17,11 @@ env:
   REGION: us-central1
   PROJECT_ID: tonal-unity-460616-s4
   IMAGE_NAME: fraud-prevention-api
+  REGISTRY: us-central1-docker.pkg.dev
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   build-and-test:
@@ -47,12 +52,10 @@ jobs:
         with:
           file: ./coverage.xml
 
-  deploy:
+  build-and-push:
     needs: build-and-test
     runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
@@ -60,28 +63,30 @@ jobs:
 
       - name: Google Auth
         id: auth
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/tonal-unity-460616-s4/locations/global/workloadIdentityPools/github-actions/providers/github-actions
-          service_account: github-actions@tonal-unity-460616-s4.iam.gserviceaccount.com
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ env.PROJECT_ID }}
 
-      - name: Configure Docker
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
 
-      - name: Build and Push Container
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker image
         run: |
-          docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }} .
+          docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}
+          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest
 
-      - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v1
-        with:
-          service: fraud-prevention-ms
-          region: ${{ env.REGION }}
-          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest 
+      - name: Export Image Digest
+        id: image
+        run: |
+          echo "image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}" >> $GITHUB_OUTPUT
