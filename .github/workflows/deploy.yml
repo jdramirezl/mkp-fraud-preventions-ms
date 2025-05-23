@@ -146,6 +146,12 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
+          # Force unlock if there's a leftover lock
+          terraform force-unlock -force 1748029724845896 || true
+          
+          # Remove any existing local state
+          rm -rf .terraform* terraform.tfstate*
+          
           terraform init -reconfigure \
             -backend-config="bucket=${{ env.TF_VAR_project_id }}-terraform-state" \
             -backend-config="prefix=fraud-prevention"
@@ -223,6 +229,12 @@ jobs:
         run: |
           # Force unlock if there's a leftover lock
           terraform force-unlock -force 1748029724845896 || true
+          
+          # Import existing network if it exists
+          terraform import google_compute_network.private_network projects/${{ env.PROJECT_ID }}/global/networks/fraud-prevention-network || true
+          
+          # Import existing service account if it exists
+          terraform import google_service_account.cloud_run_service_account projects/${{ env.PROJECT_ID }}/serviceAccounts/cloud-run-service-account@${{ env.PROJECT_ID }}.iam.gserviceaccount.com || true
           
           terraform apply -auto-approve \
             -var="container_image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/fraud-prevention-api:${{ steps.image.outputs.tag }}" \
