@@ -165,8 +165,6 @@ resource "google_cloud_run_service" "fraud_prevention" {
       annotations = {
         "autoscaling.knative.dev/maxScale"      = "2"  # Maximum 2 instances
         "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
-        "run.googleapis.com/startup-probe-period-seconds" = "240"  # Give more time for migrations
-        "run.googleapis.com/startup-probe-timeout-seconds" = "240"
       }
     }
   }

@@ -68,4 +68,18 @@ temp/
 Thumbs.db 
 
 # Terraform
+.terraform
+*.tfstate
+*.tfstate.*
 terraform.tfvars
+key.json
+cloud-sql-proxy
+
+# Migrations
+src/migrations/*.ts 
+
+# Cloud SQL
+cloud_sql_proxy
+
+# key.json  
+key.json

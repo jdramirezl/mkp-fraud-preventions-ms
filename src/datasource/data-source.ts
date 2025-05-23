@@ -7,12 +7,10 @@ const getConnectionConfig = (): DataSourceOptions => {
     synchronize: false,
     logging: process.env.NODE_ENV !== "production",
     entities: [FraudPreventionEntity],
-    migrations: ["dist/migrations/*.js"],
     subscribers: [],
   };
 
   if (process.env.NODE_ENV === 'production') {
-    // In Cloud Run, use Unix socket
     return {
       ...baseConfig,
       socketPath: `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`,
