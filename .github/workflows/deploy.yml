@@ -3,13 +3,11 @@ name: CI/CD Pipeline
 on:
   workflow_dispatch:  # Manual trigger
   push:
-    branches: [ main ]
     paths-ignore:
       - 'terraform/**'
       - '**.md'
       - '.github/workflows/terraform.yml'
   pull_request:
-    branches: [ main ]
     paths-ignore:
       - 'terraform/**'
       - '**.md'
@@ -45,7 +43,6 @@ jobs:
 
   build-and-push:
     needs: build-and-test
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -60,6 +57,8 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          service_account: 'github-actions@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+          access_token_lifetime: '1200s'
 
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -79,8 +78,10 @@ jobs:
 
   update-cloud-run:
     needs: build-and-push
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     
     steps:
       - name: Google Auth
@@ -88,6 +89,8 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          service_account: 'github-actions@${{ env.PROJECT_ID }}.iam.gserviceaccount.com'
+          access_token_lifetime: '1200s'
 
       - name: Set up Cloud SDK
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -97,4 +100,5 @@ jobs:
           gcloud run services update fraud-prevention-ms \
             --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest \
             --region=${{ env.REGION }} \
-            --project=${{ env.PROJECT_ID }} 
+            --project=${{ env.PROJECT_ID }} \
+            --platform=managed 
