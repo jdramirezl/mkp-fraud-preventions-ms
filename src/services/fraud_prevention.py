@@ -21,6 +21,8 @@ class FraudPreventionService:
             user_id=fraud_data.user_id,
             risk_level=risk_level,
             additional_data=fraud_data.additional_data,
+            attempt_count=0,
+            is_blocked=False,
         )
         self.db.add(db_fraud)
         self.db.commit()
@@ -70,6 +72,9 @@ class FraudPreventionService:
             return None
 
         update_data = fraud_data.model_dump(exclude_unset=True)
+        if "risk_level" in update_data:
+            update_data["risk_level"] = RiskLevel(update_data["risk_level"])
+
         for key, value in update_data.items():
             setattr(db_fraud, key, value)
 
@@ -87,6 +92,7 @@ class FraudPreventionService:
         db_fraud.is_blocked = True
         db_fraud.block_reason = reason
         db_fraud.risk_level = RiskLevel.CRITICAL
+        db_fraud.attempt_count += 1
 
         self.db.commit()
         self.db.refresh(db_fraud)

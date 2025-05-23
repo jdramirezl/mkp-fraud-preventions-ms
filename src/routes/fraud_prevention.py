@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -23,7 +23,7 @@ def create_fraud_prevention(
     return service.create(fraud_data)
 
 
-@router.get("", response_model=dict)
+@router.get("", response_model=Dict[str, Any])
 def get_all_fraud_preventions(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
@@ -34,7 +34,7 @@ def get_all_fraud_preventions(
     frauds, total = service.get_all(skip=skip, limit=limit)
 
     return {
-        "data": frauds,
+        "data": [FraudPreventionResponse.model_validate(fraud) for fraud in frauds],
         "total": total,
         "page": page,
         "pages": (total + limit - 1) // limit,
@@ -62,7 +62,8 @@ def get_by_transaction_id(transaction_id: str, db: Session = Depends(get_db)):
 @router.get("/user/{user_id}", response_model=List[FraudPreventionResponse])
 def get_by_user_id(user_id: str, db: Session = Depends(get_db)):
     service = FraudPreventionService(db)
-    return service.get_by_user_id(user_id)
+    frauds = service.get_by_user_id(user_id)
+    return [FraudPreventionResponse.model_validate(fraud) for fraud in frauds]
 
 
 @router.patch("/{fraud_id}", response_model=FraudPreventionResponse)
