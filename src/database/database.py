@@ -15,7 +15,7 @@ def get_connection_string() -> str:
         return "sqlite://"
 
     # Production environment
-    if os.getenv("NODE_ENV") == "production":
+    if os.getenv("ENVIRONMENT") == "production":
         instance_connection_name = os.getenv("INSTANCE_CONNECTION_NAME")
         db_user = os.getenv("DB_USER")
         db_pass = os.getenv("DB_PASSWORD")
@@ -23,7 +23,9 @@ def get_connection_string() -> str:
 
         # Cloud SQL connection using Unix socket
         unix_socket = f"/cloudsql/{instance_connection_name}"
-        return f"mysql+pymysql://{db_user}:{db_pass}@localhost/{db_name}?unix_socket={unix_socket}"
+        return (
+            f"mysql+pymysql://{db_user}:{db_pass}@{db_name}?unix_socket={unix_socket}"
+        )
 
     # Local development connection
     db_host = os.getenv("DB_HOST", "localhost")

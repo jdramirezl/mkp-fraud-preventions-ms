@@ -225,7 +225,7 @@ jobs:
 
       - name: Terraform Apply
         # Only run apply on push to main branch
-        # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           # Force unlock if there's a leftover lock
           terraform force-unlock -force 1748029724845896 || true
