@@ -1,4 +1,4 @@
-import { AppDataSource } from '../datasource/datasource';
+import { AppDataSource } from '../datasource/data-source';
 import { Repository } from 'typeorm';
 import { FraudPreventionEntity } from '../entity/fraudPreventionEntity';
 

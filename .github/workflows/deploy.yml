@@ -2,11 +2,11 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:  # Manual trigger
-  push:
-    paths-ignore:
-      - 'terraform/**'
-      - '**.md'
-      - '.github/workflows/terraform.yml'
+  # push:
+  #   paths-ignore:
+  #     - 'terraform/**'
+  #     - '**.md'
+  #     - '.github/workflows/terraform.yml'
   pull_request:
     paths-ignore:
       - 'terraform/**'

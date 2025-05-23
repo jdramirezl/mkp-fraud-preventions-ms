@@ -1,5 +1,5 @@
 import { Repository } from "typeorm";
-import { AppDataSource } from "../datasource/datasource";
+import { AppDataSource } from "../datasource/data-source";
 import { FraudPreventionEntity, RiskLevel } from "../entity/fraudPreventionEntity";
 
 export class FraudPreventionService {

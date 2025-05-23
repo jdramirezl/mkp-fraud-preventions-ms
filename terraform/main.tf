@@ -165,6 +165,8 @@ resource "google_cloud_run_service" "fraud_prevention" {
       annotations = {
         "autoscaling.knative.dev/maxScale"      = "2"  # Maximum 2 instances
         "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
+        "run.googleapis.com/client-name"        = "cloud-run-microservice"
+        "run.googleapis.com/execution-environment" = "gen2"
       }
     }
   }
