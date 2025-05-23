@@ -113,6 +113,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           create_credentials_file: true
+          token_format: 'access_token'
+          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
+          export_environment_variables: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
