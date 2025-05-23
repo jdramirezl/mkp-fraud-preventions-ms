@@ -67,36 +67,36 @@ The GitHub Actions workflow (`ci-cd.yml`) handles:
 ## 💻 Local Development
 
 1. **Clone the repository**
-   ```bash
+```bash
    git clone git@github.com:jdramirezl/mkp-fraud-preventions-ms.git
    cd mkp-fraud-preventions-ms
-   ```
+```
 
 2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. **Set up environment variables**
    Create a `.env` file:
    ```env
-   DB_HOST=localhost
-   DB_PORT=3306
-   DB_USERNAME=root
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
    DB_PASSWORD=your_password
    DB_DATABASE=fraud_prevention_db
-   NODE_ENV=development
-   ```
+NODE_ENV=development
+```
 
 4. **Run locally**
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
 5. **Run with Docker**
-   ```bash
+```bash
    docker-compose up
-   ```
+```
 
 ## 📡 API Endpoints
 
@@ -169,37 +169,37 @@ The main `FraudPrevention` entity contains:
 ## 🧪 Development Cycle
 
 1. **Run Tests**
-   ```bash
-   npm run test
-   ```
+```bash
+npm run test
+```
 
 2. **Build TypeScript**
-   ```bash
-   npm run build
-   ```
+```bash
+npm run build
+```
 
 3. **Lint Code**
-   ```bash
-   npm run lint
-   ```
+```bash
+npm run lint
+```
 
 4. **Run Production Server**
-   ```bash
-   npm start
-   ```
+```bash
+npm start
+```
 
 ## 🚢 Production Deployment
 
 1. Configure production environment variables
 2. Build Docker image:
-   ```bash
-   docker build -t fraud-preventions-ms:latest .
-   ```
+```bash
+docker build -t fraud-preventions-ms:latest .
+```
 
 3. Run with appropriate configuration:
-   ```bash
+```bash
    docker run -p 3000:8080 --env-file .env.production fraud-preventions-ms:latest
-   ```
+```
 
 ## 📚 API Documentation
 
