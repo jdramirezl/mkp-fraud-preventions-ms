@@ -24,15 +24,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --production
 
-# Copy compiled files and necessary source files for TypeORM
+# Copy compiled files and migrations
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/migrations ./src/migrations
-COPY --from=builder /app/src/entity ./src/entity
-COPY --from=builder /app/src/datasource ./src/datasource
-COPY --from=builder /app/tsconfig.json ./
-
-# Add TypeScript dependencies for migrations
-RUN npm install -D typescript ts-node @types/node
+COPY --from=builder /app/src/migrations ./dist/migrations
+COPY --from=builder /app/src/entity ./dist/entity
 
 # Add a startup script
 COPY start.sh .
