@@ -156,6 +156,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        # Only run plan on pull requests
         if: github.event_name == 'pull_request'
         run: |
           # Force unlock if there's a leftover lock
@@ -210,12 +211,14 @@ jobs:
             })
 
       - name: Terraform Plan Status
+        # Only runs if plan failed
         if: steps.plan.outcome == 'failure' || steps.plan.outputs.exitcode == 1
         run: |
           echo "Terraform Plan Failed. Check the plan output above for errors."
           exit 1
 
       - name: Terraform Apply
+        # Only run apply on push to main branch
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           # Force unlock if there's a leftover lock
