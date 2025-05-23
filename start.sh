@@ -6,7 +6,7 @@ sleep 10
 
 # Run migrations
 echo "Running database migrations..."
-NODE_ENV=production npx typeorm-ts-node-commonjs migration:run -d src/datasource/data-source.ts
+NODE_ENV=production npx typeorm-ts-node-commonjs migration:run -d dist/datasource/data-source.js
 
 if [ $? -ne 0 ]; then
     echo "Migration failed! Check the logs above for details."
