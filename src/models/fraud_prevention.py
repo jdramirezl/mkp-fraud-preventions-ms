@@ -1,13 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
 
 from sqlalchemy import JSON, Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Integer, String
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from src.database.database import Base
 
 
 class RiskLevel(str, Enum):
