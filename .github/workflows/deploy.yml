@@ -60,6 +60,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          create_credentials_file: true
+          service_account_key_file: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
+          export_default_credentials: true
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
@@ -113,9 +117,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           create_credentials_file: true
-          token_format: 'access_token'
-          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
-          export_environment_variables: true
+          service_account_key_file: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
+          export_default_credentials: true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
