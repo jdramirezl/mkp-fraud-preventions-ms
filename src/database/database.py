@@ -16,6 +16,14 @@ def get_connection_string() -> str:
 
     # Production environment
     print(f"ENVIRONMENT: {os.getenv('ENVIRONMENT')}")
+    # Print all db related environment variables
+    print(f"DB_USER: {os.getenv('DB_USER')}")
+    print(f"DB_PASSWORD: {os.getenv('DB_PASSWORD')}")
+    print(f"DB_NAME: {os.getenv('DB_NAME')}")
+    print(f"DB_HOST: {os.getenv('DB_HOST')}")
+    print(f"DB_PORT: {os.getenv('DB_PORT')}")
+    print(f"INSTANCE_CONNECTION_NAME: {os.getenv('INSTANCE_CONNECTION_NAME')}")
+
     if os.getenv("ENVIRONMENT") == "production":
         instance_connection_name = os.getenv("INSTANCE_CONNECTION_NAME")
         db_user = os.getenv("DB_USER")
