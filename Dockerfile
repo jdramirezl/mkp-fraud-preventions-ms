@@ -1,36 +1,42 @@
 # Build stage
-FROM node:18-alpine as builder
+FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy source code and config files
-COPY tsconfig.json .
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
 COPY src/ src/
 
-# TypeScript compilation
-RUN npm run build
-RUN ls -la dist/
-
 # Production stage
-FROM node:18-alpine
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy package files and install production dependencies
-COPY package*.json ./
-RUN npm install --production
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled files
-COPY --from=builder /app/dist ./dist
+# Copy dependencies and source code from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /app/src/ src/
 
 # Set environment variables
 ENV PORT=8080
 ENV NODE_ENV=production
 
+# Expose port
 EXPOSE 8080
 
-CMD ["node", "dist/index.js"]
+# Run the application
+CMD ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]

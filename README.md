@@ -1,6 +1,150 @@
 # Fraud Prevention Microservice
 
-A robust TypeScript microservice for fraud detection and prevention in digital transactions.
+A microservice for fraud prevention and risk assessment, built with FastAPI and SQLAlchemy.
+
+## 🚀 Features
+
+- Real-time fraud risk assessment
+- Transaction blocking
+- User risk profiling
+- REST API with OpenAPI documentation
+- Cloud SQL integration
+- CI/CD with GitHub Actions
+
+## 🛠️ Tech Stack
+
+- Python 3.11
+- FastAPI (Web Framework)
+- SQLAlchemy (ORM)
+- MySQL (Database)
+- Docker & Docker Compose
+- GitHub Actions (CI/CD)
+- Google Cloud Platform
+  - Cloud Run
+  - Cloud SQL
+  - Artifact Registry
+
+## 🏗️ Local Development
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd fraud-prevention-ms
+```
+
+2. Create a virtual environment and install dependencies:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+3. Start the development environment:
+```bash
+docker-compose up
+```
+
+The API will be available at `http://localhost:8000`
+
+## 📚 API Documentation
+
+Once the service is running, you can access:
+- OpenAPI documentation: `http://localhost:8000/docs`
+- ReDoc documentation: `http://localhost:8000/redoc`
+
+## 🧪 Testing
+
+Run tests with coverage:
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+
+## 🚢 Production Deployment
+
+1. Configure environment variables:
+```bash
+export PROJECT_ID=your-project-id
+export REGION=your-region
+```
+
+2. Build and push the Docker image:
+```bash
+docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest .
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest
+```
+
+3. Deploy to Cloud Run:
+```bash
+gcloud run deploy fraud-prevention-ms \
+  --image=${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest \
+  --region=${REGION} \
+  --platform=managed
+```
+
+## 📝 API Examples
+
+### Create a Fraud Prevention Record
+
+```bash
+curl -X POST http://localhost:8000/api/fraud-preventions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transaction_id": "tx-123456789",
+    "user_ip": "192.168.1.1",
+    "device_id": "device-xyz-123",
+    "user_id": "user-abc-456",
+    "additional_data": {
+      "amount": 1000,
+      "currency": "USD",
+      "payment_method": "credit_card"
+    }
+  }'
+```
+
+### Block a Transaction
+
+```bash
+curl -X POST http://localhost:8000/api/fraud-preventions/{id}/block \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Suspicious activity detected"
+  }'
+```
+
+## 🔒 Security Considerations
+
+1. **Database Access**
+   - Cloud SQL instance is protected by authorized networks
+   - Credentials are managed through GitHub Secrets
+   - SSL/TLS encryption for database connections
+
+2. **API Security**
+   - CORS configuration for production
+   - Rate limiting (to be implemented)
+   - Input validation with Pydantic
+
+## 📦 Project Structure
+
+```
+.
+├── src/
+│   ├── database/
+│   │   └── database.py
+│   ├── models/
+│   │   └── fraud_prevention.py
+│   ├── routes/
+│   │   └── fraud_prevention.py
+│   ├── schemas/
+│   │   └── fraud_prevention.py
+│   ├── services/
+│   │   └── fraud_prevention.py
+│   └── main.py
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
 
 ## 📋 Features
 

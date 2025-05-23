@@ -120,53 +120,51 @@ resource "google_cloud_run_service" "fraud_prevention" {
   location = var.region
 
   template {
+    metadata {
+      annotations = {
+        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
+        "run.googleapis.com/client-name"        = "fraud-prevention-ms"
+        "autoscaling.knative.dev/maxScale"      = "2"
+      }
+    }
+
     spec {
+      service_account_name = google_service_account.cloud_run_service_account.email
+      
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/fraud-prevention/fraud-prevention-api:latest"
         
         resources {
           limits = {
             cpu    = "1000m"     # 1 CPU
-            memory = "512Mi"     # Minimum viable for Node.js
+            memory = "512Mi"     # Memory for Python FastAPI app
           }
         }
 
-        env {
-          name  = "NODE_ENV"
-          value = "production"
-        }
-        
         env {
           name  = "INSTANCE_CONNECTION_NAME"
           value = google_sql_database_instance.instance.connection_name
         }
         
         env {
+          name  = "DB_USER"
+          value = var.db_user
+        }
+
+        env {
+          name  = "DB_PASSWORD"
+          value = var.db_password
+        }
+
+        env {
           name  = "DB_NAME"
           value = google_sql_database.database.name
         }
-        
-        env {
-          name = "DB_USER"
-          value = google_sql_user.user.name
-        }
-        
-        env {
-          name = "DB_PASSWORD"
-          value = var.db_password
-        }
-      }
 
-      # Limit concurrent requests
-      container_concurrency = 80
-    }
-
-    metadata {
-      annotations = {
-        "autoscaling.knative.dev/maxScale"      = "2"  # Maximum 2 instances
-        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
-        "run.googleapis.com/client-name"        = "cloud-run-microservice"
-        "run.googleapis.com/execution-environment" = "gen2"
+        env {
+          name  = "ENVIRONMENT"
+          value = "production"
+        }
       }
     }
   }
@@ -176,10 +174,34 @@ resource "google_cloud_run_service" "fraud_prevention" {
     latest_revision = true
   }
 
-  depends_on = [google_project_service.required_apis]
+  depends_on = [
+    google_project_service.required_apis,
+    google_sql_database_instance.instance,
+    google_sql_database.database
+  ]
 }
 
-# Allow unauthenticated access
+# Service account for Cloud Run
+resource "google_service_account" "cloud_run_service_account" {
+  account_id   = "cloud-run-service-account"
+  display_name = "Service Account for Cloud Run"
+}
+
+# Grant the service account access to Cloud SQL
+resource "google_project_iam_member" "cloud_run_cloudsql" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.cloud_run_service_account.email}"
+}
+
+# Grant the service account access to run the service
+resource "google_project_iam_member" "cloud_run_invoker" {
+  project = var.project_id
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.cloud_run_service_account.email}"
+}
+
+# Allow unauthenticated access to the service
 resource "google_cloud_run_service_iam_member" "public" {
   service  = google_cloud_run_service.fraud_prevention.name
   location = google_cloud_run_service.fraud_prevention.location
