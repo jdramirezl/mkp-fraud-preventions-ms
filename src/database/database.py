@@ -32,9 +32,7 @@ def get_connection_string() -> str:
 
         # Cloud SQL connection using Unix socket
         unix_socket = f"/cloudsql/{instance_connection_name}"
-        return (
-            f"mysql+pymysql://{db_user}:{db_pass}@{db_name}?unix_socket={unix_socket}"
-        )
+        return f"mysql+pymysql://{db_user}:{db_pass}@localhost/{db_name}?unix_socket={unix_socket}"
 
     # Local development connection
     db_host = os.getenv("DB_HOST", "localhost")
