@@ -15,6 +15,7 @@ def get_connection_string() -> str:
         return "sqlite://"
 
     # Production environment
+    print(f"ENVIRONMENT: {os.getenv('ENVIRONMENT')}")
     if os.getenv("ENVIRONMENT") == "production":
         instance_connection_name = os.getenv("INSTANCE_CONNECTION_NAME")
         db_user = os.getenv("DB_USER")
