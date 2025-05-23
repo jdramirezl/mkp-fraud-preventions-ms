@@ -158,20 +158,24 @@ jobs:
         id: plan
         if: github.event_name == 'pull_request'
         run: |
+          # Force unlock if there's a leftover lock
+          terraform force-unlock -force 1748029724845896 || true
+          
           terraform plan \
             -var="container_image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/fraud-prevention-api:${{ steps.image.outputs.tag }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -no-color \
             -input=false \
+            -lock=false \
             -detailed-exitcode || exit_code=$?
 
           if [ "${exit_code}" -eq 1 ]; then
             echo "Terraform Plan Failed!"
-            echo "::set-output name=exitcode::${exit_code}"
+            echo "exitcode=${exit_code}" >> $GITHUB_OUTPUT
             exit 1
           else
-            echo "::set-output name=exitcode::${exit_code}"
+            echo "exitcode=${exit_code}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -214,7 +218,11 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
+          # Force unlock if there's a leftover lock
+          terraform force-unlock -force 1748029724845896 || true
+          
           terraform apply -auto-approve \
             -var="container_image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/fraud-prevention/fraud-prevention-api:${{ steps.image.outputs.tag }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}"
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -lock=false
