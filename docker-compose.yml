@@ -17,6 +17,8 @@ services:
       - DB_NAME=fraud_prevention_db
     volumes:
       - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
     command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db-fraud-preventions:

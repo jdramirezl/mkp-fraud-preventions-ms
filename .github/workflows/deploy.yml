@@ -62,15 +62,17 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/751931454036/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+          workload_identity_provider: projects/tonal-unity-460616-s4/locations/global/workloadIdentityPools/github-actions/providers/github-actions
           service_account: github-actions@tonal-unity-460616-s4.iam.gserviceaccount.com
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
 
       - name: Configure Docker
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
       - name: Build and Push Container
         run: |
