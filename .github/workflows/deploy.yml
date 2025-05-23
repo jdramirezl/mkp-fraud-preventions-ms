@@ -17,6 +17,8 @@ env:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
+  issues: write
 
 jobs:
   build-and-test:
@@ -99,6 +101,10 @@ jobs:
     needs: build-and-push
     name: "Terraform"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     env:
       TF_WORKSPACE: "fraud-prevention"
       TF_VAR_project_id: "tonal-unity-460616-s4"
