@@ -133,7 +133,7 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          terraform init \
+          terraform init -reconfigure \
             -backend-config="bucket=${{ env.TF_VAR_project_id }}-terraform-state" \
             -backend-config="prefix=fraud-prevention"
 
