@@ -34,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -66,7 +66,6 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
@@ -78,12 +77,19 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and Push Docker image
-        run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }} .
-          docker build -t ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}
-          docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Export Image Digest
         id: image
