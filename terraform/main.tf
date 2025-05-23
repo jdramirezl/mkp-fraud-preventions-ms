@@ -137,13 +137,8 @@ resource "google_cloud_run_service" "fraud_prevention" {
         }
         
         env {
-          name  = "DB_HOST"
-          value = "127.0.0.1"  # Use localhost since we're using Cloud SQL Auth proxy
-        }
-        
-        env {
-          name  = "DB_PORT"
-          value = "3306"
+          name  = "INSTANCE_CONNECTION_NAME"
+          value = google_sql_database_instance.instance.connection_name
         }
         
         env {
