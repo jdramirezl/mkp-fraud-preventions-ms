@@ -64,14 +64,14 @@ resource "google_sql_user" "user" {
 
 # Create cloud run service
 resource "google_cloud_run_service" "default" {
-  name       = "my-service"
+  name       = "fraud-prevention-api"
   depends_on = [google_sql_database_instance.main, google_sql_database.database, google_sql_user.user]
   location   = var.region
 
   template {
     spec {
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project_id}/main-repo/simulator:latest"
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/fraud-prevention/fraud-prevention-api:latest"
 
         env {
           name  = "DB_URL"
