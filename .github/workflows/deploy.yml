@@ -2,6 +2,14 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:  # Manual trigger
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - 'terraform/**'
+      - '**.md'
+      - '.github/workflows/terraform.yml'
   pull_request:
     paths-ignore:
       - 'terraform/**'
@@ -51,6 +59,7 @@ jobs:
 
   build-and-push:
     needs: build-and-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
