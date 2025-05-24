@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
+from src.main import BLOCKED_TRANSACTIONS, FRAUD_ATTEMPTS
 from src.models.fraud_prevention import FraudPrevention, RiskLevel
 from src.schemas.fraud_prevention import FraudPreventionCreate, FraudPreventionUpdate
 
@@ -24,6 +25,10 @@ class FraudPreventionService:
             attempt_count=0,
             is_blocked=False,
         )
+
+        # Track fraud attempt
+        FRAUD_ATTEMPTS.labels(risk_level=risk_level.value).inc()
+
         self.db.add(db_fraud)
         self.db.commit()
         self.db.refresh(db_fraud)
@@ -73,7 +78,10 @@ class FraudPreventionService:
 
         update_data = fraud_data.model_dump(exclude_unset=True)
         if "risk_level" in update_data:
-            update_data["risk_level"] = RiskLevel(update_data["risk_level"])
+            new_risk_level = RiskLevel(update_data["risk_level"])
+            update_data["risk_level"] = new_risk_level
+            # Track risk level change
+            FRAUD_ATTEMPTS.labels(risk_level=new_risk_level.value).inc()
 
         for key, value in update_data.items():
             setattr(db_fraud, key, value)
@@ -93,6 +101,10 @@ class FraudPreventionService:
         db_fraud.block_reason = reason
         db_fraud.risk_level = RiskLevel.CRITICAL
         db_fraud.attempt_count += 1
+
+        # Track blocked transaction
+        BLOCKED_TRANSACTIONS.labels(reason=reason).inc()
+        FRAUD_ATTEMPTS.labels(risk_level=RiskLevel.CRITICAL.value).inc()
 
         self.db.commit()
         self.db.refresh(db_fraud)
