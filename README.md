@@ -8,21 +8,31 @@ A microservice for fraud prevention and risk assessment, built with FastAPI and 
 - Transaction blocking
 - User risk profiling
 - REST API with OpenAPI documentation
-- Cloud SQL integration
-- CI/CD with GitHub Actions
+- PostgreSQL database with Cloud SQL
+- Automated CI/CD with GitHub Actions
+- Infrastructure as Code with Terraform
+- Containerized deployment on Cloud Run
 
 ## 🛠️ Tech Stack
 
-- Python 3.11
+- Python 3.12
 - FastAPI (Web Framework)
 - SQLAlchemy (ORM)
-- MySQL (Database)
+- PostgreSQL (Database)
 - Docker & Docker Compose
 - GitHub Actions (CI/CD)
+- Terraform (Infrastructure as Code)
 - Google Cloud Platform
-  - Cloud Run
-  - Cloud SQL
-  - Artifact Registry
+  - Cloud Run (Serverless deployment)
+  - Cloud SQL (Managed PostgreSQL)
+  - Artifact Registry (Container registry)
+
+## 📚 Documentation
+
+- [API Endpoints](docs/api-endpoints.md)
+- [Development Guide](docs/development.md)
+- [Deployment Guide](docs/deployment.md)
+- [Integration Guide](docs/integration.md)
 
 ## 🏗️ Local Development
 
@@ -34,8 +44,8 @@ cd fraud-prevention-ms
 
 2. Create a virtual environment and install dependencies:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -49,329 +59,162 @@ The API will be available at `http://localhost:8000`
 ## 📚 API Documentation
 
 Once the service is running, you can access:
-- OpenAPI documentation: `http://localhost:8000/docs`
-- ReDoc documentation: `http://localhost:8000/redoc`
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
 ## 🧪 Testing
 
 Run tests with coverage:
 ```bash
-pytest --cov=src --cov-report=term-missing
+pytest --cov=src --cov-report=xml
 ```
 
 ## 🚢 Production Deployment
 
-1. Configure environment variables:
+### Prerequisites
+
+1. **Google Cloud Platform Setup**
+   - Create a new project or use an existing one
+   - Enable required APIs:
+     - Cloud Run API
+     - Cloud SQL Admin API
+     - Artifact Registry API
+   - Create a service account with necessary permissions
+   - Download the service account key JSON
+
+2. **GitHub Repository Setup**
+   Add the following secrets:
+   - `GCP_SA_KEY`: The service account key JSON
+   - `PROJECT_ID`: Your GCP project ID
+
+### Deployment Process
+
+The deployment is fully automated through GitHub Actions and Terraform:
+
+1. **CI/CD Pipeline** (.github/workflows/deploy.yml)
+   - Runs on:
+     - Pull requests (tests only)
+     - Pushes to main/master (full deployment)
+     - Manual triggers
+   - Steps:
+     - Runs tests and coverage
+     - Builds Docker image
+     - Pushes to Artifact Registry
+     - Updates Cloud Run service
+
+2. **Infrastructure** (terraform/)
+   - Managed resources:
+     - Cloud SQL PostgreSQL instance
+     - Cloud Run service
+     - IAM permissions
+     - Network configuration
+
+### Manual Deployment
+
+If needed, you can deploy manually:
+
+1. Build and push the Docker image:
 ```bash
-export PROJECT_ID=your-project-id
-export REGION=your-region
+docker build -t us-central1-docker.pkg.dev/PROJECT_ID/fraud-prevention/fraud-prevention-api:latest .
+docker push us-central1-docker.pkg.dev/PROJECT_ID/fraud-prevention/fraud-prevention-api:latest
 ```
 
-2. Build and push the Docker image:
+2. Apply Terraform configuration:
 ```bash
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest .
-docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest
+cd terraform
+terraform init
+terraform apply
 ```
 
-3. Deploy to Cloud Run:
-```bash
-gcloud run deploy fraud-prevention-ms \
-  --image=${REGION}-docker.pkg.dev/${PROJECT_ID}/fraud-prevention/fraud-prevention-api:latest \
-  --region=${REGION} \
-  --platform=managed
+## 🔌 Integration Guide
+
+To integrate with this microservice:
+
+1. **Base URL**: 
+```
+https://fraud-prevention-api-fuylmr6llq-uc.a.run.app
 ```
 
-## 📝 API Examples
-
-### Create a Fraud Prevention Record
-
-```bash
-curl -X POST http://localhost:8000/api/fraud-preventions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "transaction_id": "tx-123456789",
-    "user_ip": "192.168.1.1",
-    "device_id": "device-xyz-123",
-    "user_id": "user-abc-456",
-    "additional_data": {
-      "amount": 1000,
-      "currency": "USD",
-      "payment_method": "credit_card"
-    }
-  }'
+2. **Environment Variables**:
+```env
+FRAUD_PREVENTION_API_URL=https://fraud-prevention-api-fuylmr6llq-uc.a.run.app
 ```
 
-### Block a Transaction
-
-```bash
-curl -X POST http://localhost:8000/api/fraud-preventions/{id}/block \
-  -H "Content-Type: application/json" \
-  -d '{
-    "reason": "Suspicious activity detected"
-  }'
-```
-
-## 🔒 Security Considerations
-
-1. **Database Access**
-   - Cloud SQL instance is protected by authorized networks
-   - Credentials are managed through GitHub Secrets
-   - SSL/TLS encryption for database connections
-
-2. **API Security**
-   - CORS configuration for production
-   - Rate limiting (to be implemented)
-   - Input validation with Pydantic
+3. **API Documentation**:
+   - Swagger UI: `${FRAUD_PREVENTION_API_URL}/docs`
+   - ReDoc: `${FRAUD_PREVENTION_API_URL}/redoc`
 
 ## 📦 Project Structure
 
 ```
 .
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # CI/CD workflow
 ├── src/
-│   ├── database/
-│   │   └── database.py
-│   ├── models/
-│   │   └── fraud_prevention.py
-│   ├── routes/
-│   │   └── fraud_prevention.py
-│   ├── schemas/
-│   │   └── fraud_prevention.py
-│   ├── services/
-│   │   └── fraud_prevention.py
-│   └── main.py
-├── tests/
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
+│   ├── database/          # Database configuration
+│   ├── models/            # SQLAlchemy models
+│   ├── routes/            # API endpoints
+│   ├── schemas/           # Pydantic models
+│   ├── services/          # Business logic
+│   └── main.py           # Application entry
+├── terraform/
+│   ├── main.tf           # Main Terraform configuration
+│   ├── variables.tf      # Variable definitions
+│   └── outputs.tf        # Output definitions
+├── tests/                # Test suite
+├── Dockerfile           # Production container
+├── docker-compose.yml   # Local development
+├── requirements.txt     # Python dependencies
 └── README.md
 ```
 
-## 📋 Features
-
-- **Real-time Risk Assessment** - Automatic transaction analysis to determine risk levels
-- **User and Device Tracking** - Monitoring of suspicious behavior patterns
-- **Complete RESTful API** - Endpoints for all CRUD operations
-- **Transaction Blocking** - Ability to block suspicious transactions with reason logging
-- **MySQL Persistence** - Secure and efficient data storage
-- **Docker Containerization** - Easy deployment in any environment
-
-## 🛠️ Architecture
-
-The microservice follows a layered architecture:
-
-```
-fraud-preventions-ms/
-├── src/
-│   ├── controllers/     # HTTP request handling
-│   ├── datasource/      # Database connection configuration
-│   ├── entity/          # Entity and model definitions
-│   ├── routes/          # API route definitions
-│   ├── services/        # Business logic
-│   └── index.ts         # Application entry point
-```
-
-## 🚀 Deployment Setup
-
-### Prerequisites
-
-1. **Google Cloud Platform Account**
-   - Create a new project or use an existing one
-   - Enable the required APIs (will be handled by Terraform)
-   - Create a service account with the following roles:
-     - Cloud Run Admin
-     - Cloud SQL Admin
-     - Storage Admin
-     - Service Account User
-     - Artifact Registry Administrator
-
-2. **GitHub Repository Setup**
-   Add the following secrets to your GitHub repository:
-   - `GCP_PROJECT_ID`: Your GCP project ID
-   - `GCP_SA_KEY`: The service account key JSON
-   - `GCP_TF_STATE_BUCKET`: The GCS bucket name for Terraform state
-   - `DB_PASSWORD`: The password for the database user
-
-### Infrastructure
-
-The infrastructure is managed using Terraform and includes:
-- Cloud Run service for the application
-- Cloud SQL (MySQL) for the database
-- Artifact Registry for Docker images
-- Required networking and IAM configurations
-
-### CI/CD Pipeline
-
-The GitHub Actions workflow (`ci-cd.yml`) handles:
-1. Running tests
-2. Building the Docker image
-3. Pushing to Artifact Registry
-4. Applying Terraform changes
-5. Deploying to Cloud Run
-
-## 💻 Local Development
-
-1. **Clone the repository**
-```bash
-   git clone git@github.com:jdramirezl/mkp-fraud-preventions-ms.git
-   cd mkp-fraud-preventions-ms
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Set up environment variables**
-   Create a `.env` file:
-   ```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=root
-   DB_PASSWORD=your_password
-   DB_DATABASE=fraud_prevention_db
-NODE_ENV=development
-```
-
-4. **Run locally**
-```bash
-npm run dev
-```
-
-5. **Run with Docker**
-```bash
-   docker-compose up
-```
-
-## 📡 API Endpoints
-
-### Fraud Prevention
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/api/fraud-preventions` | Get all fraud preventions (paginated) |
-| GET | `/api/fraud-preventions/:id` | Get fraud prevention by ID |
-| GET | `/api/fraud-preventions/transaction/:transactionId` | Get prevention by transaction ID |
-| GET | `/api/fraud-preventions/user/:userId` | Get all preventions for a user |
-| POST | `/api/fraud-preventions` | Create new fraud prevention record |
-| PUT | `/api/fraud-preventions/:id` | Update existing record |
-| DELETE | `/api/fraud-preventions/:id` | Delete record |
-| POST | `/api/fraud-preventions/:id/block` | Block a transaction with specific reason |
-
-### Service Health
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/health` | Check service health status |
-
-## 📥 Usage Examples
-
-### Create a New Fraud Check
-
-```bash
-curl -X POST http://localhost:3000/api/fraud-preventions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "transactionId": "tx-123456789",
-    "userIp": "192.168.1.1",
-    "deviceId": "device-xyz-123",
-    "userId": "user-abc-456",
-    "additionalData": {
-      "amount": 1000,
-      "currency": "USD",
-      "paymentMethod": "credit_card"
-    }
-  }'
-```
-
-### Block a Suspicious Transaction
-
-```bash
-curl -X POST http://localhost:3000/api/fraud-preventions/uuid-of-record/block \
-  -H "Content-Type: application/json" \
-  -d '{
-    "reason": "Multiple failed attempts from different locations"
-  }'
-```
-
-## 📊 Data Model
-
-The main `FraudPrevention` entity contains:
-
-- `id`: Unique identifier (UUID)
-- `transactionId`: Related transaction ID
-- `userIp`: User's IP address
-- `deviceId`: Device identifier
-- `userId`: User identifier
-- `riskLevel`: Risk level (LOW, MEDIUM, HIGH, CRITICAL)
-- `additionalData`: Additional transaction data (JSON)
-- `isBlocked`: Transaction block indicator
-- `blockReason`: Block reason
-- `attemptCount`: Attempt counter
-- `createdAt`: Creation timestamp
-- `updatedAt`: Last update timestamp
-
-## 🧪 Development Cycle
-
-1. **Run Tests**
-```bash
-npm run test
-```
-
-2. **Build TypeScript**
-```bash
-npm run build
-```
-
-3. **Lint Code**
-```bash
-npm run lint
-```
-
-4. **Run Production Server**
-```bash
-npm start
-```
-
-## 🚢 Production Deployment
-
-1. Configure production environment variables
-2. Build Docker image:
-```bash
-docker build -t fraud-preventions-ms:latest .
-```
-
-3. Run with appropriate configuration:
-```bash
-   docker run -p 3000:8080 --env-file .env.production fraud-preventions-ms:latest
-```
-
-## 📚 API Documentation
-
-The API documentation is available through Swagger UI when running in development mode.
-
 ## 🔒 Security Considerations
 
-1. **Database Access**
-   - Cloud SQL instance is protected by authorized networks
-   - Credentials are managed through GitHub Secrets
-   - SSL/TLS encryption for database connections
+1. **Database Security**
+   - Cloud SQL instance with private IP
+   - SSL/TLS encryption for connections
+   - Managed backups and updates
 
 2. **API Security**
-   - Cloud Run service can be configured with authentication
-   - Environment variables are securely managed
-   - Service account with minimal required permissions
+   - HTTPS only
+   - Cloud Run's built-in security
+   - Input validation with Pydantic
 
-## 📊 Monitoring and Logging
+3. **CI/CD Security**
+   - Secrets managed via GitHub Actions
+   - Least privilege service accounts
+   - Container vulnerability scanning
 
-- Cloud Run provides built-in monitoring and logging
-- Cloud SQL monitoring is available through Cloud Monitoring
-- Custom metrics can be added using OpenTelemetry
+## 🔄 Development Workflow
+
+1. Create a feature branch
+2. Make changes and test locally
+3. Create a PR to main/master
+4. GitHub Actions runs tests
+5. After approval and merge:
+   - New image is built and pushed
+   - Cloud Run service updates automatically
+
+## 📋 Environment Variables
+
+### Local Development
+```env
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=fraud_prevention
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+### Production
+Environment variables are managed through Terraform and Cloud Run configuration.
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
+3. Commit changes
 4. Push to the branch
 5. Create a Pull Request
 
@@ -382,6 +225,133 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Contact
 
 For any questions or suggestions, please open an issue in the repository.
+
+## 📡 API Endpoints
+
+All endpoints are prefixed with `/api/fraud-preventions`
+
+### Create Fraud Prevention Record
+- **POST** `/`
+- **Request Body**:
+```json
+{
+    "transactionId": "tx-123456",
+    "userIp": "192.168.1.1",
+    "deviceId": "device-xyz-123",  // optional
+    "userId": "user-123",
+    "additionalData": {            // optional
+        "amount": 1000,
+        "currency": "USD",
+        "paymentMethod": "credit_card"
+    }
+}
+```
+- **Response** (200 OK):
+```json
+{
+    "id": "uuid-123",
+    "transactionId": "tx-123456",
+    "userIp": "192.168.1.1",
+    "deviceId": "device-xyz-123",
+    "userId": "user-123",
+    "additionalData": {
+        "amount": 1000,
+        "currency": "USD",
+        "paymentMethod": "credit_card"
+    },
+    "riskLevel": "LOW",
+    "isBlocked": false,
+    "blockReason": null,
+    "attemptCount": 1,
+    "createdAt": "2025-05-24T17:12:46Z",
+    "updatedAt": "2025-05-24T17:12:46Z"
+}
+```
+
+### Get All Fraud Preventions
+- **GET** `/?page=1&limit=10`
+- **Query Parameters**:
+  - `page`: Page number (default: 1)
+  - `limit`: Items per page (default: 10, max: 100)
+- **Response** (200 OK):
+```json
+{
+    "data": [
+        {
+            // FraudPreventionResponse object
+        }
+    ],
+    "total": 100,
+    "page": 1,
+    "pages": 10
+}
+```
+
+### Get by ID
+- **GET** `/{fraud_id}`
+- **Response** (200 OK): FraudPreventionResponse object
+- **Response** (404 Not Found):
+```json
+{
+    "detail": "Fraud prevention record not found"
+}
+```
+
+### Get by Transaction ID
+- **GET** `/transaction/{transaction_id}`
+- **Response** (200 OK): FraudPreventionResponse object
+- **Response** (404 Not Found):
+```json
+{
+    "detail": "Fraud prevention record not found"
+}
+```
+
+### Get by User ID
+- **GET** `/user/{user_id}`
+- **Response** (200 OK): Array of FraudPreventionResponse objects
+
+### Update Fraud Prevention
+- **PATCH** `/{fraud_id}`
+- **Request Body**:
+```json
+{
+    "riskLevel": "HIGH",           // optional
+    "isBlocked": true,            // optional
+    "blockReason": "Suspicious activity",  // optional
+    "attemptCount": 3             // optional
+}
+```
+- **Response** (200 OK): FraudPreventionResponse object
+- **Response** (404 Not Found):
+```json
+{
+    "detail": "Fraud prevention record not found"
+}
+```
+
+### Block Transaction
+- **POST** `/{fraud_id}/block`
+- **Request Body**:
+```json
+{
+    "reason": "Multiple failed attempts from different locations"
+}
+```
+- **Response** (200 OK): FraudPreventionResponse object
+- **Response** (404 Not Found):
+```json
+{
+    "detail": "Fraud prevention record not found"
+}
+```
+
+### Risk Levels
+Available risk levels for transactions:
+- `LOW`
+- `MEDIUM`
+- `HIGH`
+- `CRITICAL`
 
 ---
 
