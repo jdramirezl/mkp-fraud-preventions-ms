@@ -1,0 +1,39 @@
+{
+	"info": {
+		"_postman_id": "health-check-collection",
+		"name": "Health Check",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Basic health checks for the Fraud Prevention API"
+	},
+	"item": [
+		{
+			"name": "1. Health Check",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "{{baseUrl}}/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["health"]
+				}
+			}
+		},
+		{
+			"name": "2. Metrics Endpoint",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "{{baseUrl}}/metrics",
+					"host": ["{{baseUrl}}"],
+					"path": ["metrics"]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://fraud-prevention-api-fuylmr6llq-uc.a.run.app",
+			"type": "string"
+		}
+	]
+} 

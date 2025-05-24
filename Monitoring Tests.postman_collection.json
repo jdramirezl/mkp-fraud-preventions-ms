@@ -1,0 +1,228 @@
+{
+	"info": {
+		"_postman_id": "monitoring-tests-collection",
+		"name": "Monitoring Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Collection for generating monitoring data in the Fraud Prevention API"
+	},
+	"item": [
+		{
+			"name": "1. Generate Risk Level Metrics",
+			"item": [
+				{
+					"name": "Create Low Risk Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"tx-low-risk-{{$timestamp}}\",\n    \"userIp\": \"192.168.1.1\",\n    \"deviceId\": \"device-123\",\n    \"userId\": \"user-123\",\n    \"additionalData\": {\n        \"amount\": 100,\n        \"currency\": \"USD\",\n        \"paymentMethod\": \"credit_card\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"low_risk_id\", jsonData.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Medium Risk Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"tx-medium-risk-{{$timestamp}}\",\n    \"userIp\": \"192.168.1.1\",\n    \"deviceId\": \"device-123\",\n    \"userId\": \"user-123\",\n    \"additionalData\": {\n        \"amount\": 5000,\n        \"currency\": \"USD\",\n        \"paymentMethod\": \"credit_card\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"medium_risk_id\", jsonData.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create High Risk Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionId\": \"tx-high-risk-{{$timestamp}}\",\n    \"userIp\": \"10.0.0.1\",\n    \"deviceId\": \"device-456\",\n    \"userId\": \"user-123\",\n    \"additionalData\": {\n        \"amount\": 10000,\n        \"currency\": \"USD\",\n        \"paymentMethod\": \"credit_card\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"high_risk_id\", jsonData.id);"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "2. Generate Blocked Transaction Metrics",
+			"item": [
+				{
+					"name": "Block Transaction - Location Change",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Suspicious location change\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions/{{high_risk_id}}/block",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions", "{{high_risk_id}}", "block"]
+						}
+					}
+				},
+				{
+					"name": "Block Transaction - Unusual Amount",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"Unusual transaction amount\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions/{{medium_risk_id}}/block",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions", "{{medium_risk_id}}", "block"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Generate Latency Metrics",
+			"item": [
+				{
+					"name": "Get All Transactions",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Transaction by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions/{{high_risk_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions", "{{high_risk_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Get User History",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/fraud-preventions/user/user-123",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "fraud-preventions", "user", "user-123"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://fraud-prevention-api-fuylmr6llq-uc.a.run.app",
+			"type": "string"
+		},
+		{
+			"key": "low_risk_id",
+			"value": ""
+		},
+		{
+			"key": "medium_risk_id",
+			"value": ""
+		},
+		{
+			"key": "high_risk_id",
+			"value": ""
+		}
+	]
+} 

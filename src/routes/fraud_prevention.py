@@ -17,10 +17,11 @@ router = APIRouter(prefix="/api/fraud-preventions", tags=["fraud-prevention"])
 
 @router.post("", response_model=FraudPreventionResponse)
 def create_fraud_prevention(
-    fraud_data: FraudPreventionCreate, db: Session = Depends(get_db)
+    fraud_prevention: FraudPreventionCreate,
+    db: Session = Depends(get_db),
 ):
     service = FraudPreventionService(db)
-    return service.create(fraud_data)
+    return service.create(fraud_prevention)
 
 
 @router.get("", response_model=Dict[str, Any])
@@ -86,4 +87,3 @@ def block_transaction(
     if not fraud:
         raise HTTPException(status_code=404, detail="Fraud prevention record not found")
     return fraud
- 

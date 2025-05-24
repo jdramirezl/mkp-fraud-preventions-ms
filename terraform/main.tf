@@ -27,6 +27,11 @@ resource "google_project_service" "cloud_run" {
   disable_dependent_services = true
 }
 
+resource "google_project_service" "monitoring" {
+  service                    = "monitoring.googleapis.com"
+  disable_dependent_services = true
+}
+
 # Create cloud sql instance
 resource "google_sql_database_instance" "main" {
   name             = var.cloud_sql_instance_name
@@ -62,6 +67,19 @@ resource "google_sql_user" "user" {
   password = var.db_password
 }
 
+# Create service account for Cloud Run
+resource "google_service_account" "fraud_prevention" {
+  account_id   = "fraud-prevention-sa"
+  display_name = "Fraud Prevention Service Account"
+}
+
+# Grant Cloud SQL Client role to the service account
+resource "google_project_iam_member" "cloud_sql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.fraud_prevention.email}"
+}
+
 # Create cloud run service
 resource "google_cloud_run_service" "default" {
   name       = "fraud-prevention-api"
@@ -70,8 +88,14 @@ resource "google_cloud_run_service" "default" {
 
   template {
     spec {
+      service_account_name = google_service_account.fraud_prevention.email
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/fraud-prevention/fraud-prevention-api:latest"
+
+        env {
+          name  = "PROJECT_ID"
+          value = var.project_id
+        }
 
         env {
           name  = "DB_URL"
@@ -134,4 +158,3 @@ resource "google_cloud_run_service_iam_policy" "noauth" {
   service     = google_cloud_run_service.default.name
   policy_data = data.google_iam_policy.noauth.policy_data
 }
-

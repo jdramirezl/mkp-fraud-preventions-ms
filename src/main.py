@@ -1,18 +1,20 @@
 import json
 import logging
 import sys
+import time
 import uuid
 from datetime import datetime
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from google.cloud import monitoring_v3
-from google.cloud.monitoring_v3 import MetricServiceClient
-from prometheus_client import generate_latest
-from starlette.responses import Response
+from opentelemetry import metrics
+from opentelemetry.exporter.cloud_monitoring import CloudMonitoringMetricsExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 from src.database.database import Base, setup_database
-from src.metrics import REQUEST_LATENCY
+from src.metrics import meter, record_request_duration
 from src.routes.fraud_prevention import router as fraud_prevention_router
 
 
@@ -61,33 +63,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-class MetricsMiddleware:
-    def __init__(self, app):
-        self.app = app
-        self._client = None
-
-    @property
-    def client(self) -> MetricServiceClient:
-        if self._client is None:
-            self._client = monitoring_v3.MetricServiceClient()
-        return self._client
-
-    async def __call__(self, request: Request, call_next):
-        path = request.url.path
-
-        # Skip metrics endpoint itself
-        if path == "/metrics":
-            return await call_next(request)
-
-        # Time the request
-        with REQUEST_LATENCY.labels(endpoint=path).time():
-            response = await call_next(request)
-
-        return response
-
-
-app.add_middleware(MetricsMiddleware)
+# Initialize OpenTelemetry instrumentation
+FastAPIInstrumentor.instrument_app(app)
 
 
 @app.middleware("http")
@@ -103,7 +80,12 @@ async def log_requests(request: Request, call_next):
         },
     )
 
+    start_time = time.time()
     response = await call_next(request)
+    duration = time.time() - start_time
+
+    # Record request duration
+    record_request_duration(duration, str(request.url.path))
 
     logger.info(
         "Request completed",
@@ -116,7 +98,6 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-# Include routers
 app.include_router(fraud_prevention_router)
 
 
@@ -127,7 +108,7 @@ def health_check():
     return {"status": "healthy"}
 
 
-# Metrics endpoint
+# Add metrics endpoint
 @app.get("/metrics")
-def metrics():
-    return Response(generate_latest(), media_type="text/plain")
+async def get_metrics():
+    return {"message": "Metrics are being exported to Google Cloud Monitoring"}
