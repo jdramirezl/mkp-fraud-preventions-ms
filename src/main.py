@@ -8,10 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import monitoring_v3
 from google.cloud.monitoring_v3 import MetricServiceClient
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import generate_latest
 from starlette.responses import Response
 
 from src.database.database import Base, setup_database
+from src.metrics import REQUEST_LATENCY
 from src.routes.fraud_prevention import router as fraud_prevention_router
 
 
@@ -40,23 +41,6 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(GCPJsonFormatter())
 logger.handlers = [handler]
 logger.setLevel(logging.INFO)
-
-# Initialize metrics
-FRAUD_ATTEMPTS = Counter(
-    "fraud_prevention_attempts_total",
-    "Total number of fraud prevention checks",
-    ["risk_level"],
-)
-
-BLOCKED_TRANSACTIONS = Counter(
-    "fraud_prevention_blocked_total", "Total number of blocked transactions", ["reason"]
-)
-
-REQUEST_LATENCY = Histogram(
-    "fraud_prevention_request_duration_seconds",
-    "Request latency in seconds",
-    ["endpoint"],
-)
 
 # Initialize database
 engine, _ = setup_database()

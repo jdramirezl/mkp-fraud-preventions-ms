@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from src.main import BLOCKED_TRANSACTIONS, FRAUD_ATTEMPTS
+from src.metrics import BLOCKED_TRANSACTIONS, FRAUD_ATTEMPTS
 from src.models.fraud_prevention import FraudPrevention, RiskLevel
 from src.schemas.fraud_prevention import FraudPreventionCreate, FraudPreventionUpdate
 
