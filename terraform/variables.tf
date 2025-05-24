@@ -39,3 +39,8 @@ variable "home_ip" {
   description = "The IP address to whitelist for the database"
   type        = string
 }
+
+variable "alert_email_address" {
+  description = "Email address to receive monitoring alerts"
+  type        = string
+}
