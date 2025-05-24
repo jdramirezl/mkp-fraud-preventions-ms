@@ -1,0 +1,105 @@
+name: CI/CD Pipeline
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - 'terraform/**'
+      - '**.md'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    paths-ignore:
+      - 'terraform/**'
+      - '**.md'
+      - '.github/workflows/terraform.yml'
+
+env:
+  REGION: us-central1
+  PROJECT_ID: tonal-unity-460616-s4
+  IMAGE_NAME: fraud-prevention-api
+  REGISTRY: us-central1-docker.pkg.dev
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[test]"
+
+      - name: Run tests
+        run: |
+          pytest --cov=src --cov-report=xml
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+
+  build-and-push:
+    needs: build-and-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: true
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export Image Digest
+        id: image
+        run: |
+          echo "image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/fraud-prevention/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha_short }}" >> $GITHUB_OUTPUT

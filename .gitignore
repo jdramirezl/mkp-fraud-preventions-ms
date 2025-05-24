@@ -66,3 +66,67 @@ temp/
 # System Files
 .DS_Store
 Thumbs.db 
+
+# Terraform
+.terraform
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+key.json
+cloud-sql-proxy
+
+# Migrations
+src/migrations/*.ts 
+
+# Cloud SQL
+cloud_sql_proxy
+
+# key.json  
+key.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.env
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+.dbfraudprevention/
+*.log
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/.terraform.lock.hcl
