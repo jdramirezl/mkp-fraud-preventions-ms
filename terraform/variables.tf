@@ -14,6 +14,11 @@ variable "container_image" {
   type        = string
 }
 
+variable "db_name" {
+  description = "Database name"
+  type        = string
+}
+
 variable "db_user" {
   description = "Database user name"
   type        = string
@@ -24,3 +29,13 @@ variable "db_password" {
   type        = string
   sensitive   = true
 } 
+
+variable "cloud_sql_instance_name" {
+  description = "The name of the Cloud SQL instance"
+  type        = string
+}
+
+variable "home_ip" {
+  description = "The IP address to whitelist for the database"
+  type        = string
+}

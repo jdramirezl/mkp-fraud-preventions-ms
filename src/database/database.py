@@ -1,4 +1,5 @@
 import os
+import logging
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -8,39 +9,41 @@ from sqlalchemy.orm import sessionmaker
 if "TESTING" not in os.environ:
     os.environ["TESTING"] = "false"
 
+logger = logging.getLogger(__name__)
 
 def get_connection_string() -> str:
     # Test environment uses SQLite
     if os.getenv("TESTING") == "true":
         return "sqlite://"
 
-    # Production environment
-    print(f"ENVIRONMENT: {os.getenv('ENVIRONMENT')}")
-    # Print all db related environment variables
-    print(f"DB_USER: {os.getenv('DB_USER')}")
-    print(f"DB_PASSWORD: {os.getenv('DB_PASSWORD')}")
-    print(f"DB_NAME: {os.getenv('DB_NAME')}")
-    print(f"DB_HOST: {os.getenv('DB_HOST')}")
-    print(f"DB_PORT: {os.getenv('DB_PORT')}")
-    print(f"INSTANCE_CONNECTION_NAME: {os.getenv('INSTANCE_CONNECTION_NAME')}")
+    db_url = os.getenv("DB_URL")
+    logger.info("DB_URL: %s", db_url)
+    
+    if db_url:
+        return db_url
 
-    if os.getenv("ENVIRONMENT") == "production":
-        instance_connection_name = os.getenv("INSTANCE_CONNECTION_NAME")
-        db_user = os.getenv("DB_USER")
-        db_pass = os.getenv("DB_PASSWORD")
-        db_name = os.getenv("DB_NAME")
+    # Log environment variables for debugging
+    environment = os.getenv('ENVIRONMENT')
+    db_user = os.getenv('DB_USER')
+    db_pass = os.getenv('DB_PASSWORD')
+    db_name = os.getenv('DB_NAME')
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT')
+    
+    logger.info("ENVIRONMENT: %s", environment)
+    logger.info("DB_USER: %s", db_user)
+    logger.info("DB_PASSWORD: %s", db_pass)
+    logger.info("DB_NAME: %s", db_name)
+    logger.info("DB_HOST: %s", db_host)
+    logger.info("DB_PORT: %s", db_port)
+    
+    # Get common variables
+    cloud_sql_public_ip = os.getenv("CLOUD_SQL_PUBLIC_IP")
+    
+    return (
+        f"postgresql://{db_user}:{db_pass}@/{db_name}?host={cloud_sql_public_ip}"
+    )
 
-        # Cloud SQL connection using Unix socket
-        unix_socket = f"/cloudsql/{instance_connection_name}"
-        return f"mysql+pymysql://{db_user}:{db_pass}@localhost/{db_name}?unix_socket={unix_socket}"
-
-    # Local development connection
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = os.getenv("DB_PORT", "3306")
-    db_user = os.getenv("DB_USER")
-    db_pass = os.getenv("DB_PASSWORD")
-    db_name = os.getenv("DB_NAME")
-    return f"mysql+pymysql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
 
 def get_engine_args():

@@ -17,133 +17,70 @@ provider "google" {
 }
 
 # Enable required APIs
-resource "google_project_service" "required_apis" {
-  for_each = toset([
-    "run.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "servicenetworking.googleapis.com"
-  ])
-  
-  service = each.key
-  disable_on_destroy = false
+resource "google_project_service" "cloud_sql" {
+  service                    = "sqladmin.googleapis.com"
+  disable_dependent_services = true
 }
 
-# Reserve IP range for Service Networking
-resource "google_compute_global_address" "private_ip_address" {
-  name          = "fraud-prevention-private-ip"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 16
-  network       = google_compute_network.private_network.id
+resource "google_project_service" "cloud_run" {
+  service                    = "run.googleapis.com"
+  disable_dependent_services = true
 }
 
-# Create VPC peering connection
-resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = google_compute_network.private_network.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
-}
+# Create cloud sql instance
+resource "google_sql_database_instance" "main" {
+  name             = var.cloud_sql_instance_name
+  database_version = "POSTGRES_15"
+  root_password    = var.db_password
+  depends_on       = [google_project_service.cloud_sql]
 
-# Cloud SQL Instance
-resource "google_sql_database_instance" "instance" {
-  name             = "fraud-prevention-db"
-  database_version = "MYSQL_8_0"
-  region           = var.region
-  
   settings {
-    tier              = "db-f1-micro"  # Cheapest tier
-    disk_size         = 10  # Minimum size in GB
-    availability_type = "ZONAL"  # Cheaper than regional
-    
-    backup_configuration {
-      enabled    = true
-      start_time = "23:00"  # Late night backup
-      # Minimum backup settings to stay within free tier
-      backup_retention_settings {
-        retained_backups = 3
-        retention_unit   = "COUNT"
-      }
-    }
-    
-    ip_configuration {
-      ipv4_enabled    = false  # Disable public IP
-      private_network = google_compute_network.private_network.id
-    }
+    tier = "db-custom-2-3840"
 
-    # Prevent automatic storage increases
-    disk_autoresize = false
-    
-    # Database flags for optimization
-    database_flags {
-      name  = "max_connections"
-      value = "100"  # Limit concurrent connections
+    # Ip whitelisting
+    ip_configuration {
+      authorized_networks {
+        name  = "home"
+        value = var.home_ip
+      }
     }
   }
 
-  deletion_protection = true  # Prevent accidental deletion
-  
-  depends_on = [
-    google_project_service.required_apis,
-    google_service_networking_connection.private_vpc_connection
-  ]
+  deletion_protection = false
 }
 
-# Database
+# Create database
 resource "google_sql_database" "database" {
-  name     = "fraud_prevention_db"
-  instance = google_sql_database_instance.instance.name
+  name     = var.db_name
+  instance = google_sql_database_instance.main.name
 }
 
-# Database user
+# Create database user
 resource "google_sql_user" "user" {
   name     = var.db_user
-  instance = google_sql_database_instance.instance.name
+  instance = google_sql_database_instance.main.name
   password = var.db_password
 }
 
-# VPC network for private connectivity
-resource "google_compute_network" "private_network" {
-  name                    = "fraud-prevention-network"
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "private_subnetwork" {
-  name          = "fraud-prevention-subnetwork"
-  ip_cidr_range = "10.0.0.0/24"
-  network       = google_compute_network.private_network.id
-  region        = var.region
-}
-
-# Cloud Run service
-resource "google_cloud_run_service" "fraud_prevention" {
-  name     = "fraud-prevention-ms"
-  location = var.region
+# Create cloud run service
+resource "google_cloud_run_service" "default" {
+  name       = "my-service"
+  depends_on = [google_sql_database_instance.main, google_sql_database.database, google_sql_user.user]
+  location   = var.region
 
   template {
-    metadata {
-      annotations = {
-        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name
-        "run.googleapis.com/client-name"        = "fraud-prevention-ms"
-        "autoscaling.knative.dev/maxScale"      = "2"
-      }
-    }
-
     spec {
-      service_account_name = google_service_account.cloud_run_service_account.email
-      
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project_id}/fraud-prevention/fraud-prevention-api:latest"
-        
-        resources {
-          limits = {
-            cpu    = "1000m"     # 1 CPU
-            memory = "512Mi"     # Memory for Python FastAPI app
-          }
+        image = "${var.region}-docker.pkg.dev/${var.project_id}/main-repo/simulator:latest"
+
+        env {
+          name  = "DB_URL"
+          value = "postgresql://${var.db_user}:${var.db_password}@/${var.db_name}?host=/cloudsql/${google_sql_database_instance.main.connection_name}"
         }
 
         env {
-          name  = "INSTANCE_CONNECTION_NAME"
-          value = google_sql_database_instance.instance.connection_name
+          name  = "ENVIRONMENT"
+          value = "production"
         }
         
         env {
@@ -158,53 +95,26 @@ resource "google_cloud_run_service" "fraud_prevention" {
 
         env {
           name  = "DB_NAME"
-          value = google_sql_database.database.name
+          value = var.db_name
         }
 
         env {
-          name  = "ENVIRONMENT"
-          value = "production"
+          name  = "DB_HOST"
+          value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
+        }
+
+        env {
+          name  = "DB_PORT"
+          value = "5432"
         }
       }
     }
+
+    metadata {
+      annotations = {
+        "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.main.connection_name
+      }
+    }
   }
-
-  traffic {
-    percent         = 100
-    latest_revision = true
-  }
-
-  depends_on = [
-    google_project_service.required_apis,
-    google_sql_database_instance.instance,
-    google_sql_database.database
-  ]
 }
 
-# Service account for Cloud Run
-resource "google_service_account" "cloud_run_service_account" {
-  account_id   = "cloud-run-service-account"
-  display_name = "Service Account for Cloud Run"
-}
-
-# Grant the service account access to Cloud SQL
-resource "google_project_iam_member" "cloud_run_cloudsql" {
-  project = var.project_id
-  role    = "roles/cloudsql.client"
-  member  = "serviceAccount:${google_service_account.cloud_run_service_account.email}"
-}
-
-# Grant the service account access to run the service
-resource "google_project_iam_member" "cloud_run_invoker" {
-  project = var.project_id
-  role    = "roles/run.invoker"
-  member  = "serviceAccount:${google_service_account.cloud_run_service_account.email}"
-}
-
-# Allow unauthenticated access to the service
-resource "google_cloud_run_service_iam_member" "public" {
-  service  = google_cloud_run_service.fraud_prevention.name
-  location = google_cloud_run_service.fraud_prevention.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-} 

@@ -17,3 +17,9 @@ output "private_network_name" {
   description = "The name of the VPC network"
   value       = google_compute_network.private_network.name
 } 
+
+output "cloud_sql_public_ip" {
+  description = "The public IP address of the Cloud SQL instance"
+  value       = google_sql_database_instance.instance.public_ip_address
+}
+
