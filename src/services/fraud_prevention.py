@@ -32,11 +32,11 @@ class FraudPreventionService:
             self.db.commit()
             self.db.refresh(db_fraud)
             duration = time.time() - start_time
-            record_attempt(success=True, duration=duration)
+            record_attempt(success=True, duration=duration, risk_level=risk_level.value)
             return db_fraud
         except Exception as e:
             duration = time.time() - start_time
-            record_attempt(success=False, duration=duration)
+            record_attempt(success=False, duration=duration, risk_level="unknown")
             raise e
 
     def get_all(
@@ -110,12 +110,14 @@ class FraudPreventionService:
             self.db.refresh(db_fraud)
 
             duration = time.time() - start_time
-            record_attempt(success=True, duration=duration)
-            record_blocked()
+            record_attempt(
+                success=True, duration=duration, risk_level=RiskLevel.CRITICAL.value
+            )
+            record_blocked(risk_level=RiskLevel.CRITICAL.value)
             return db_fraud
         except Exception as e:
             duration = time.time() - start_time
-            record_attempt(success=False, duration=duration)
+            record_attempt(success=False, duration=duration, risk_level="unknown")
             raise e
 
     def _assess_risk(self, user_id: str) -> RiskLevel:

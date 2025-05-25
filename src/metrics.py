@@ -12,6 +12,7 @@ resource = Resource.create(
         "service.name": "fraud-prevention-api",
         "service.namespace": "fraud-prevention",
         "service.instance.id": os.getenv("K_REVISION", "local"),
+        "environment": os.getenv("ENVIRONMENT", "development"),
     }
 )
 
@@ -20,7 +21,9 @@ exporter = CloudMonitoringMetricsExporter(project_id=os.getenv("GOOGLE_CLOUD_PRO
 
 # Create a metric reader that will periodically export metrics
 reader = PeriodicExportingMetricReader(
-    exporter, export_interval_millis=60000  # Export every 60 seconds
+    exporter,
+    export_interval_millis=10000,  # Export every 10 seconds
+    export_timeout_millis=5000,  # Timeout after 5 seconds
 )
 
 # Create a meter provider with our reader
@@ -53,12 +56,14 @@ fraud_prevention_request_duration = meter.create_histogram(
 
 
 # Helper functions to record metrics
-def record_attempt(success: bool, duration: float):
+def record_attempt(success: bool, duration: float, risk_level: str = None):
     """Record a fraud prevention attempt with its outcome and duration."""
-    fraud_prevention_attempts.add(1, {"success": str(success)})
-    fraud_prevention_request_duration.record(duration)
+    attributes = {"success": str(success), "risk_level": risk_level or "unknown"}
+    fraud_prevention_attempts.add(1, attributes)
+    fraud_prevention_request_duration.record(duration, attributes)
 
 
-def record_blocked():
+def record_blocked(risk_level: str = None):
     """Record a blocked fraud attempt."""
-    fraud_prevention_blocked.add(1)
+    attributes = {"risk_level": risk_level or "unknown"}
+    fraud_prevention_blocked.add(1, attributes)
