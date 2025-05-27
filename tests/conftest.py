@@ -8,12 +8,18 @@ from sqlalchemy.pool import StaticPool
 # Set testing environment before importing the app
 os.environ["TESTING"] = "true"
 
-# Mock the metrics functions before importing the app
-mock_record_attempt = MagicMock()
-mock_record_blocked = MagicMock()
+# Create mock for Cloud Monitoring
+mock_exporter = MagicMock()
+mock_metrics = MagicMock()
+mock_metrics.record_attempt = MagicMock()
+mock_metrics.record_blocked = MagicMock()
 
-with patch("src.services.fraud_prevention.record_attempt", mock_record_attempt), patch(
-    "src.services.fraud_prevention.record_blocked", mock_record_blocked
+# Patch both the exporter and the metrics module
+with patch(
+    "opentelemetry.exporter.cloud_monitoring.CloudMonitoringMetricsExporter",
+    return_value=mock_exporter,
+), patch("src.metrics.record_attempt", mock_metrics.record_attempt), patch(
+    "src.metrics.record_blocked", mock_metrics.record_blocked
 ):
     from src.database.database import Base, get_db, setup_database
     from src.main import app
@@ -27,8 +33,8 @@ Base.metadata.create_all(bind=engine)
 def metrics_mocks():
     """Return the metric mock functions for assertions in tests."""
     return {
-        "record_attempt": mock_record_attempt,
-        "record_blocked": mock_record_blocked,
+        "record_attempt": mock_metrics.record_attempt,
+        "record_blocked": mock_metrics.record_blocked,
     }
 
 
