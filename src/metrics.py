@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from opentelemetry import metrics
 from opentelemetry.exporter.cloud_monitoring import CloudMonitoringMetricsExporter
@@ -56,14 +57,14 @@ fraud_prevention_request_duration = meter.create_histogram(
 
 
 # Helper functions to record metrics
-def record_attempt(success: bool, duration: float, risk_level: str = None):
+def record_attempt(success: bool, duration: float, risk_level: Optional[str] = None):
     """Record a fraud prevention attempt with its outcome and duration."""
     attributes = {"success": str(success), "risk_level": risk_level or "unknown"}
     fraud_prevention_attempts.add(1, attributes)
     fraud_prevention_request_duration.record(duration, attributes)
 
 
-def record_blocked(risk_level: str = None):
+def record_blocked(risk_level: Optional[str] = None):
     """Record a blocked fraud attempt."""
     attributes = {"risk_level": risk_level or "unknown"}
     fraud_prevention_blocked.add(1, attributes)

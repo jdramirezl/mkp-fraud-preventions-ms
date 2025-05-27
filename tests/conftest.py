@@ -1,4 +1,5 @@
 import os
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,6 +28,19 @@ def db_session():
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture(autouse=True)
+def mock_cloud_monitoring():
+    """Mock Cloud Monitoring metrics for all tests."""
+    with patch(
+        "opentelemetry.exporter.cloud_monitoring.CloudMonitoringMetricsExporter",
+        autospec=True,
+    ) as mock_exporter:
+        # Create a mock exporter instance
+        mock_instance = MagicMock()
+        mock_exporter.return_value = mock_instance
+        yield mock_instance
 
 
 @pytest.fixture
