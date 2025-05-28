@@ -27,6 +27,37 @@ resource "google_project_service" "cloud_run" {
   disable_dependent_services = true
 }
 
+resource "google_project_service" "monitoring" {
+  service                    = "monitoring.googleapis.com"
+  disable_dependent_services = true
+}
+
+# Create service account
+resource "google_service_account" "monitoring" {
+  account_id   = "monitoring-sa"
+  display_name = "Monitoring Service Account"
+}
+
+# Grant monitoring permissions
+resource "google_project_iam_member" "monitoring_metric_writer" {
+  project = var.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.monitoring.email}"
+}
+
+resource "google_project_iam_member" "monitoring_viewer" {
+  project = var.project_id
+  role    = "roles/monitoring.viewer"
+  member  = "serviceAccount:${google_service_account.monitoring.email}"
+}
+
+# Grant Cloud SQL access
+resource "google_project_iam_member" "cloud_sql_client" {
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.monitoring.email}"
+}
+
 # Create cloud sql instance
 resource "google_sql_database_instance" "main" {
   name             = var.cloud_sql_instance_name
@@ -70,6 +101,7 @@ resource "google_cloud_run_service" "default" {
 
   template {
     spec {
+      service_account_name = google_service_account.monitoring.email
       containers {
         image = "${var.region}-docker.pkg.dev/${var.project_id}/fraud-prevention/fraud-prevention-api:latest"
 
@@ -106,6 +138,11 @@ resource "google_cloud_run_service" "default" {
         env {
           name  = "DB_PORT"
           value = "5432"
+        }
+
+        env {
+          name  = "GOOGLE_CLOUD_PROJECT"
+          value = var.project_id
         }
       }
     }

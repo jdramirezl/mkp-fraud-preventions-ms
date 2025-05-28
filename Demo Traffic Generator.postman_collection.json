@@ -1,0 +1,140 @@
+{
+	"info": {
+		"_postman_id": "b8f23d9f-4e12-4a3a-8b5e-9d2c7e8f4321",
+		"name": "Demo Traffic Generator",
+		"description": "Collection to generate demo traffic for the Fraud Prevention API dashboard",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Generate Mixed Traffic",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Configuration",
+							"const userIds = ['user123', 'user456', 'user789'];",
+							"const ipAddresses = [",
+							"    '192.168.1.1',",
+							"    '192.168.1.2',",
+							"    '192.168.1.3',",
+							"    '192.168.1.4',",
+							"    '192.168.1.5',",
+							"    '192.168.1.6'",
+							"];",
+							"",
+							"// Get random item from array",
+							"function getRandomItem(array) {",
+							"    return array[Math.floor(Math.random() * array.length)];",
+							"}",
+							"",
+							"// Generate random amount between 100 and 10000",
+							"function getRandomAmount() {",
+							"    return Math.floor(Math.random() * 9900) + 100;",
+							"}",
+							"",
+							"// Simulate different scenarios",
+							"function generateRequest() {",
+							"    const userId = getRandomItem(userIds);",
+							"    const scenario = Math.random();",
+							"    ",
+							"    if (scenario < 0.6) { // 60% normal traffic",
+							"        return {",
+							"            userId: userId,",
+							"            amount: getRandomAmount(),",
+							"            ipAddress: getRandomItem(ipAddresses.slice(0, 2))",
+							"        };",
+							"    } else if (scenario < 0.85) { // 25% suspicious traffic",
+							"        return {",
+							"            userId: userId,",
+							"            amount: getRandomAmount() * 2, // Higher amounts",
+							"            ipAddress: getRandomItem(ipAddresses.slice(2, 4))",
+							"        };",
+							"    } else { // 15% high-risk traffic",
+							"        return {",
+							"            userId: userId,",
+							"            amount: getRandomAmount() * 5, // Very high amounts",
+							"            ipAddress: getRandomItem(ipAddresses.slice(4)) // Use last IPs",
+							"        };",
+							"    }",
+							"}",
+							"",
+							"// Generate and send request",
+							"const requestData = generateRequest();",
+							"pm.sendRequest({",
+							"    url: pm.request.url,",
+							"    method: 'POST',",
+							"    header: {",
+							"        'Content-Type': 'application/json'",
+							"    },",
+							"    body: {",
+							"        mode: 'raw',",
+							"        raw: JSON.stringify(requestData)",
+							"    }",
+							"}, function (err, response) {",
+							"    if (err) {",
+							"        console.error(err);",
+							"    } else {",
+							"        console.log('Request sent:', requestData);",
+							"        console.log('Response:', response.json());",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": \"{{userId}}\",\n    \"amount\": {{amount}},\n    \"ipAddress\": \"{{ipAddress}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/check-transaction",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"check-transaction"
+					]
+				},
+				"description": "Generates mixed traffic patterns to demonstrate the fraud prevention system"
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://fraud-prevention-api-xxxxx-uc.a.run.app",
+			"type": "string"
+		}
+	]
+} 
